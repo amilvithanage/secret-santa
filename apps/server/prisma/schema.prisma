@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  giftExchangeParticipants GiftExchangeParticipant[]
+  givenAssignments         Assignment[]              @relation("GiverAssignments")
+  receivedAssignments      Assignment[]              @relation("ReceiverAssignments")
+  excluderRules            ExclusionRule[]           @relation("ExcluderRules")
+  excludedRules            ExclusionRule[]           @relation("ExcludedRules")
+
+  @@map("participants")
+}
+
+model GiftExchange {
+  id        String              @id @default(cuid())
+  name      String
+  year      Int
+  status    GiftExchangeStatus  @default(DRAFT)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  // Relations
+  participants  GiftExchangeParticipant[]
+  assignments   Assignment[]
+  exclusionRules ExclusionRule[]
+
+  @@map("gift_exchanges")
+}
+
+model GiftExchangeParticipant {
+  id              String   @id @default(cuid())
+  giftExchangeId  String
+  participantId   String
+  createdAt       DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  participant  Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([giftExchangeId, participantId])
+  @@map("gift_exchange_participants")
+}
+
+model Assignment {
+  id             String   @id @default(cuid())
+  giftExchangeId String
+  giverId        String
+  receiverId     String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  giver        Participant  @relation("GiverAssignments", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver     Participant  @relation("ReceiverAssignments", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([giftExchangeId, giverId])
+  @@unique([giftExchangeId, receiverId])
+  @@map("assignments")
+}
+
+model ExclusionRule {
+  id             String   @id @default(cuid())
+  giftExchangeId String
+  excluderId     String
+  excludedId     String
+  reason         String?
+  createdAt      DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  excluder     Participant  @relation("ExcluderRules", fields: [excluderId], references: [id], onDelete: Cascade)
+  excluded     Participant  @relation("ExcludedRules", fields: [excludedId], references: [id], onDelete: Cascade)
+
+  @@unique([giftExchangeId, excluderId, excludedId])
+  @@map("exclusion_rules")
+}
+
+enum GiftExchangeStatus {
+  DRAFT
+  PARTICIPANTS_ADDED
+  ASSIGNED
+  COMPLETED
+}

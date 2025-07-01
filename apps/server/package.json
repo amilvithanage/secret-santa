@@ -5,7 +5,13 @@
   "scripts": {
     "build": "tsc --project ./tsconfig.json",
     "start": "node dist/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "nodemon --exec ts-node server.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "prisma migrate reset",
+    "db:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +19,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "@secret-santa/shared-types": "*",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^5.1.0",
