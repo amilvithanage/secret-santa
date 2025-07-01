@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Participant model - Core user entity
+model Participant {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  giftExchangeParticipants GiftExchangeParticipant[]
+  givenAssignments         Assignment[]              @relation("GiverAssignments")
+  receivedAssignments      Assignment[]              @relation("ReceiverAssignments")
+  excluderRules            ExclusionRule[]           @relation("ExcluderRules")
+  excludedRules            ExclusionRule[]           @relation("ExcludedRules")
+
+  @@map("participants")
+}
+
+// Gift Exchange model - Manages Secret Santa events
+model GiftExchange {
+  id        String             @id @default(cuid())
+  name      String
+  year      Int
+  status    GiftExchangeStatus @default(DRAFT)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  // Relations
+  participants   GiftExchangeParticipant[]
+  assignments    Assignment[]
+  exclusionRules ExclusionRule[]
+
+  @@map("gift_exchanges")
+}
+
+// Junction table for many-to-many relationship between GiftExchange and Participant
+model GiftExchangeParticipant {
+  id             String   @id @default(cuid())
+  giftExchangeId String
+  participantId  String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  participant  Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  // Ensure a participant can only be added once per gift exchange
+  @@unique([giftExchangeId, participantId])
+  @@map("gift_exchange_participants")
+}
+
+// Assignment model - Stores Secret Santa assignments
+model Assignment {
+  id             String   @id @default(cuid())
+  giftExchangeId String
+  giverId        String
+  receiverId     String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  giver        Participant  @relation("GiverAssignments", fields: [giverId], references: [id], onDelete: Cascade)
+  receiver     Participant  @relation("ReceiverAssignments", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Ensure each participant gives and receives exactly once per exchange
+  @@unique([giftExchangeId, giverId])
+  @@unique([giftExchangeId, receiverId])
+  @@map("assignments")
+}
+
+// Exclusion Rule model - Defines who cannot draw whom
+model ExclusionRule {
+  id             String   @id @default(cuid())
+  giftExchangeId String
+  excluderId     String // The person who cannot draw
+  excludedId     String // The person who cannot be drawn
+  reason         String? // Optional reason for the exclusion
+  createdAt      DateTime @default(now())
+
+  // Relations
+  giftExchange GiftExchange @relation(fields: [giftExchangeId], references: [id], onDelete: Cascade)
+  excluder     Participant  @relation("ExcluderRules", fields: [excluderId], references: [id], onDelete: Cascade)
+  excluded     Participant  @relation("ExcludedRules", fields: [excludedId], references: [id], onDelete: Cascade)
+
+  // Ensure no duplicate exclusion rules
+  @@unique([giftExchangeId, excluderId, excludedId])
+  @@map("exclusion_rules")
+}
+
+// Enum for Gift Exchange status
+enum GiftExchangeStatus {
+  DRAFT // Exchange created but not ready
+  PARTICIPANTS_ADDED // Participants added, ready for assignment
+  ASSIGNED // Secret Santa assignments completed
+  COMPLETED // Exchange finished
+}
