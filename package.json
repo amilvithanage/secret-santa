@@ -4,7 +4,8 @@
   "main": "index.js",
   "workspaces": [
     "apps/server",
-    "apps/client"
+    "apps/client",
+    "packages/*"
   ],
   "scripts": {
     "start:client": "npm run start --workspace=apps/client",
@@ -13,6 +14,8 @@
     "start:server": "npm run start --workspace=apps/server",
     "build:server": "npm run build --workspace=apps/server",
     "test:server": "npm run test --workspace=apps/server",
+    "build:shared-types": "npm run build --workspace=packages/shared-types",
+    "build:all": "npm run build:shared-types && npm run build:server && npm run build:client",
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "format": "prettier --write ."
   },
