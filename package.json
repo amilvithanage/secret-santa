@@ -1,0 +1,28 @@
+{
+  "name": "secret-santa",
+  "version": "1.0.0",
+  "main": "index.js",
+  "workspaces": [
+    "apps/server",
+    "apps/client"
+  ],
+  "scripts": {
+    "start:client": "npm run start --workspace=apps/client",
+    "build:client": "npm run build --workspace=apps/client",
+    "test:client": "npm run test --workspace=apps/client",
+    "start:server": "npm run start --workspace=apps/server",
+    "build:server": "npm run build --workspace=apps/server",
+    "test:server": "npm run test --workspace=apps/server",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "format": "prettier --write ."
+  },
+  "keywords": [],
+  "author": "amilvithanage.me",
+  "description": "",
+  "dependencies": {
+    "@types/node": "^24.0.7",
+    "eslint": "^9.30.0",
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3"
+  }
+}

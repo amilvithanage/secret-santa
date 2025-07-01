@@ -1,0 +1,25 @@
+FROM node:18-alpine
+
+# Update system packages to reduce vulnerabilities
+RUN apk update && apk upgrade && apk add --no-cache bash
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy package.json and package-lock.json
+COPY apps/server/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the application code (including tsconfig, src, etc.)
+COPY apps/server/ ./
+
+# Build TypeScript
+RUN npm run build
+
+# Expose the application port
+EXPOSE 3000
+
+# Command to run the application
+CMD ["npm", "start"]
