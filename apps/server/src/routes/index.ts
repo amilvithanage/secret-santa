@@ -1,8 +1,15 @@
 import { Router } from 'express';
-import participantRoutes from './participantRoutes';
+import participantRoutes from './participantRoutes'
+import giftExchangeRoutes from './giftExchangeRoutes'
 
-const router = Router();
+const router = Router()
 
-router.use('/participants', participantRoutes);
+// Mount route modules
+router.use('/participants', participantRoutes)
+router.use('/gift-exchanges', giftExchangeRoutes)
 
-export default router;
+// Future routes will be added here:
+// router.use('/assignments', assignmentRoutes);
+// router.use('/exclusion-rules', exclusionRuleRoutes);
+
+export default router

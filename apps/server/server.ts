@@ -23,12 +23,11 @@ app.use(express.json()) // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })) // Parse URL-encoded bodies
 
 // Mount routes
-app.use('/api', routes);
+app.use('/api', routes)
 
 // Health check endpoint
 app.get('/api/health', async (_req, res) => {
-  try {
-    const dbHealth = await DatabaseService.getInstance().healthCheck();
+    const dbHealth = await DatabaseService.getInstance().healthCheck()
 
     if (dbHealth) {
       ResponseHelper.success(res, {
@@ -36,15 +35,16 @@ app.get('/api/health', async (_req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         environment: process.env['NODE_ENV'] || 'development',
-        database: 'connected'
+        database: 'connected',
+            endpoints: {
+              participants: '/api/participants',
+              giftExchanges: '/api/gift-exchanges'
+            }
       })
     } else {
       ResponseHelper.error(res, 'Database health check failed', 503, 'Service temporarily unavailable')
     }
-  } catch (error) {
-    ResponseHelper.error(res, 'Health check failed', 503, 'Service temporarily unavailable')
-  }
-})
+  })
 
 // 404 handler
 app.use((req, _res, next) => {

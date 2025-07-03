@@ -69,3 +69,58 @@ export const participantValidationSchemas = {
       .optional(),
   }),
 };
+
+// Gift Exchange validation schemas
+export const giftExchangeValidationSchemas = {
+  create: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name is required')
+      .max(200, 'Name must be at most 200 characters'),
+
+    year: z
+      .number()
+      .int('Year must be an integer')
+      .refine((year) => {
+        const currentYear = new Date().getFullYear();
+        return year >= currentYear - 10 && year <= currentYear + 10;
+      }, {
+        message: `Year must be between ${new Date().getFullYear() - 10} and ${new Date().getFullYear() + 10}`,
+      }),
+  }),
+
+  update: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Name must be at least 1 character')
+      .max(200, 'Name must be at most 200 characters')
+      .optional(),
+
+    year: z
+      .number()
+      .int('Year must be an integer')
+      .refine((year) => {
+        const currentYear = new Date().getFullYear();
+        return year >= currentYear - 10 && year <= currentYear + 10;
+      }, {
+        message: `Year must be between ${new Date().getFullYear() - 10} and ${new Date().getFullYear() + 10}`,
+      })
+      .optional(),
+
+    status: z
+      .enum(['DRAFT', 'PARTICIPANTS_ADDED', 'ASSIGNED', 'COMPLETED'], {
+        errorMap: () => ({ message: 'Status must be one of: DRAFT, PARTICIPANTS_ADDED, ASSIGNED, COMPLETED' }),
+      })
+      .optional(),
+  }),
+};
+
+// Add participant to gift exchange validation schema
+export const addParticipantValidationSchema = z.object({
+  participantId: z
+    .string()
+    .trim()
+    .min(1, 'Participant ID is required'),
+});
