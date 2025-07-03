@@ -3,13 +3,34 @@ import DatabaseService from '../../src/services/database';
 import { CreateParticipantRequest, UpdateParticipantRequest } from '@secret-santa/shared-types';
 import { Prisma } from '../../src/generated/prisma';
 
+// Mock the DatabaseService
+jest.mock('../../src/services/database');
+
 describe('ParticipantService', () => {
   let participantService: ParticipantService;
   let mockPrisma: any;
 
   beforeEach(() => {
+    // Reset all mocks
+    jest.clearAllMocks();
+
+    // Create mock Prisma client
+    mockPrisma = {
+      participant: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+    };
+
+    // Mock DatabaseService.getInstance().prisma
+    (DatabaseService.getInstance as jest.Mock).mockReturnValue({
+      prisma: mockPrisma,
+    });
+
     participantService = new ParticipantService();
-    mockPrisma = DatabaseService.getInstance().prisma;
   });
 
   describe('createParticipant', () => {

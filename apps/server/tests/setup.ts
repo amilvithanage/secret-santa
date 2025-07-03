@@ -17,6 +17,13 @@ jest.mock('../src/generated/prisma', () => ({
       update: jest.fn(),
       delete: jest.fn(),
     },
+    giftExchangeParticipant: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+    },
     assignment: {
       create: jest.fn(),
       findMany: jest.fn(),
