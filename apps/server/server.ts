@@ -38,7 +38,8 @@ app.get('/api/health', async (_req, res) => {
         database: 'connected',
             endpoints: {
               participants: '/api/participants',
-              giftExchanges: '/api/gift-exchanges'
+              giftExchanges: '/api/gift-exchanges',
+              assignments: '/api/assignments',
             }
       })
     } else {
