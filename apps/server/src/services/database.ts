@@ -1,19 +1,24 @@
 import { PrismaClient } from '../generated/prisma';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
 class DatabaseService {
   private static instance: DatabaseService;
-  public prisma: PrismaClient;
+  public prisma: any; // Using any for Accelerate extended client
   private isConnected: boolean = false;
 
   private constructor() {
-    this.prisma = new PrismaClient({
+    const client = new PrismaClient({
       log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
     });
 
-    // Handle process termination for graceful shutdown
-    process.on('beforeExit', async () => {
-      await this.disconnect();
-    });
+    // Use Accelerate extension only if the database URL uses Prisma Accelerate
+    if (process.env.DATABASE_URL?.includes('prisma+postgres://')) {
+      this.prisma = client.$extends(withAccelerate());
+    } else {
+      this.prisma = client;
+    }
+
+    // Note: Graceful shutdown is handled in server.ts
   }
 
   public static getInstance(): DatabaseService {
