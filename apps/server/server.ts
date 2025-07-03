@@ -78,6 +78,10 @@ const startServer = async () => {
       console.error("❌ Server error:", error);
     });
 
+    server.on('error', (error) => {
+      console.error('❌ Server error:', error);
+    });
+
     // Graceful shutdown
     const shutdown = async () => {
       server.close(async () => {
