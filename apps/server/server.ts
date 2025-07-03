@@ -3,10 +3,11 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { errorHandler } from "./src/middleware/errorHandler";
-import routes from "./src/routes";
+import routes from "./src/routes/index";
 import DatabaseService from "./src/services/database";
 import { NotFoundError } from "./src/utils/errors";
+import { ResponseHelper } from "./src/utils/responseHelper";
+import errorHandler from "./src/middleware/errorHandler";
 
 // Load environment variables
 dotenv.config();
@@ -26,15 +27,26 @@ app.use("/api", routes);
 
 // Health check endpoint
 app.get("/api/health", async (_req, res) => {
-  const dbHealth = await DatabaseService.getInstance().healthCheck();
+  try {
+    const dbHealth = await DatabaseService.getInstance().healthCheck();
 
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env["NODE_ENV"] || "development",
-    database: dbHealth ? "connected" : "disconnected",
-  });
+    if (dbHealth) {
+      ResponseHelper.success(res, {
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env["NODE_ENV"] || "development",
+        database: "connected",
+      });
+    } 
+  } catch (error) {
+    ResponseHelper.error(
+      res,
+      "Health check failed",
+      503,
+      "Service temporarily unavailable",
+    );
+  }
 });
 
 // Error handling middleware
@@ -62,9 +74,12 @@ const startServer = async () => {
       );
     });
 
+    server.on("error", (error) => {
+      console.error("❌ Server error:", error);
+    });
+
     // Graceful shutdown
     const shutdown = async () => {
-      console.log("Received shutdown signal, closing server...");
       server.close(async () => {
         await DatabaseService.getInstance().disconnect();
         console.log("Server closed gracefully.");
@@ -82,6 +97,9 @@ const startServer = async () => {
   }
 };
 
-startServer();
+startServer().catch((error) => {
+  console.error("❌ Failed to start server:", error);
+  process.exit(1);
+});
 
 export default app;
