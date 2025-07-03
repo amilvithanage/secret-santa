@@ -46,6 +46,12 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+export class ConflictError extends AppError {
+  constructor(message: string) {
+    super(message, 'ConflictError', 409);
+  }
+}
+
 export class InternalServerError extends AppError {
   constructor(message: string = "Internal Server Error") {
     super(message, "InternalServerError", 500);
