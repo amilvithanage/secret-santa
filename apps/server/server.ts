@@ -46,13 +46,13 @@ app.get('/api/health', async (_req, res) => {
   }
 })
 
-// Error handling middleware
-app.use(errorHandler)
-
 // 404 handler
 app.use((req, _res, next) => {
   next(new NotFoundError(`Route ${req.originalUrl} not found`))
 })
+
+// Error handler - must be last
+app.use(errorHandler)
 
 // Initialize database and start server
 const startServer = async () => {
