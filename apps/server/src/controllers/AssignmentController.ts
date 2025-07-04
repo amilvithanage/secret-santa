@@ -74,9 +74,9 @@ export class AssignmentController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { giftExchangeId } = req.params;
+      const { id } = req.params;
       const result = await this.assignmentService.createAssignments({
-        giftExchangeId,
+        giftExchangeId: id,
       });
 
       if (result.success) {

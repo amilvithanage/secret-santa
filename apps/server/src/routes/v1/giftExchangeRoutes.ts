@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { GiftExchangeController } from "../../controllers/giftExchangeController";
+import { AssignmentController } from "../../controllers/AssignmentController";
 import { validate } from "../../middleware/validation";
 import {
   createGiftExchangeSchema,
@@ -12,6 +13,7 @@ import {
 
 const router = Router();
 const giftExchangeController = new GiftExchangeController();
+const assignmentController = new AssignmentController();
 
 // GET /api/v1/gift-exchanges
 router.get(
@@ -67,6 +69,28 @@ router.delete(
   "/:id/participants/:participantId",
   validate(giftExchangeWithParticipantParamsSchema),
   giftExchangeController.removeParticipantFromExchange,
+);
+
+// Assignment routes for gift exchanges
+// POST /api/v1/gift-exchanges/:id/assignments - Create Secret Santa assignments
+router.post(
+  "/:id/assignments",
+  validate(giftExchangeParamsSchema),
+  assignmentController.createAssignments,
+);
+
+// GET /api/v1/gift-exchanges/:id/assignments - Get assignments for exchange
+router.get(
+  "/:id/assignments",
+  validate(giftExchangeParamsSchema),
+  assignmentController.getAssignmentsForExchange,
+);
+
+// DELETE /api/v1/gift-exchanges/:id/assignments - Delete all assignments for exchange
+router.delete(
+  "/:id/assignments",
+  validate(giftExchangeParamsSchema),
+  assignmentController.resetAssignments,
 );
 
 export default router;
