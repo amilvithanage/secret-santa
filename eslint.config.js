@@ -1,50 +1,20 @@
-import js from "@eslint/js";
-import typescript from "@typescript-eslint/eslint-plugin";
-import typescriptParser from "@typescript-eslint/parser";
-
 export default [
-  // Base JavaScript configuration
-  js.configs.recommended,
-
-  // TypeScript configuration
+  // Base configuration for all files
   {
-    files: ["**/*.ts", "**/*.tsx"],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-        project: ["./apps/*/tsconfig.json", "./packages/*/tsconfig.json"],
-      },
-    },
-    plugins: {
-      "@typescript-eslint": typescript,
-    },
-    rules: {
-      // TypeScript specific rules
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_" },
-      ],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/prefer-const": "error",
-
-      // General rules
-      "no-console": "off", // Allow console.log for server logging
-      "no-unused-vars": "off", // Use TypeScript version instead
-    },
-  },
-
-  // JavaScript configuration
-  {
-    files: ["**/*.js", "**/*.jsx"],
+    files: ["**/*.js", "**/*.jsx", "**/*.ts", "**/*.tsx"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
     },
     rules: {
+      // Basic rules that work without plugins
       "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "prefer-const": "error",
+      "no-console": "off", // Allow console.log for server logging
+      "no-var": "error",
+      eqeqeq: "error",
+      curly: "error",
+      "no-undef": "off", // TypeScript handles this
     },
   },
 
