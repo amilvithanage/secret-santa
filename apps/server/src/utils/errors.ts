@@ -48,7 +48,7 @@ export class UnauthorizedError extends AppError {
 
 export class ConflictError extends AppError {
   constructor(message: string) {
-    super(message, 'ConflictError', 409);
+    super(message, "ConflictError", 409);
   }
 }
 

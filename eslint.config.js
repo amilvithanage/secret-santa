@@ -12,8 +12,8 @@ export default [
       "prefer-const": "error",
       "no-console": "off", // Allow console.log for server logging
       "no-var": "error",
-      "eqeqeq": "error",
-      "curly": "error",
+      eqeqeq: "error",
+      curly: "error",
       "no-undef": "off", // TypeScript handles this
     },
   },
