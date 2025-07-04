@@ -3,11 +3,33 @@ import { z, ZodSchema, ZodError } from 'zod';
 import { ValidationError } from '../utils/errors';
 
 // Validation middleware to check for validation errors using Zod
-export const validateRequest = (schema: ZodSchema) => {
+export const validate = (schema: ZodSchema) => {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      // Validate request body against the schema
-      req.body = schema.parse(req.body);
+      // Validate the entire request object (body, params, query) against the schema
+      const validatedData = schema.parse({
+        body: req.body,
+        params: req.params,
+        query: req.query
+      });
+
+      // Update request with validated data
+      if (validatedData.body) req.body = validatedData.body;
+      if (validatedData.params) req.params = validatedData.params;
+      if (validatedData.query) {
+        // Replace the entire query object with validated data
+        // This ensures proper type transformations are applied
+        try {
+          req.query = validatedData.query as any;
+        } catch (error) {
+          // In test environments, req.query might be read-only
+          // In that case, copy properties individually
+          Object.keys(validatedData.query).forEach(key => {
+            (req.query as any)[key] = (validatedData.query as any)[key];
+          });
+        }
+      }
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {
@@ -22,6 +44,8 @@ export const validateRequest = (schema: ZodSchema) => {
           detailedMessage = message.toLowerCase();
         } else if (message.toLowerCase().includes('required')) {
           detailedMessage = `${fieldName} is required`;
+        } else if (message.toLowerCase().includes('invalid email format')) {
+          detailedMessage = 'email must be a valid email address';
         } else {
           detailedMessage = `${fieldName} ${message.toLowerCase()}`;
         }
@@ -33,39 +57,4 @@ export const validateRequest = (schema: ZodSchema) => {
       return next(error);
     }
   };
-};
-
-// Participant validation schemas
-export const participantValidationSchemas = {
-  create: z.object({
-    name: z
-      .string()
-      .trim()
-      .min(1, 'Name is required')
-      .min(2, 'Name must be at least 2 characters')
-      .max(100, 'Name must be at most 100 characters'),
-
-    email: z
-      .string()
-      .trim()
-      .min(1, 'Email is required')
-      .email('Must be a valid email address')
-      .toLowerCase(),
-  }),
-
-  update: z.object({
-    name: z
-      .string()
-      .trim()
-      .min(2, 'Name must be at least 2 characters')
-      .max(100, 'Name must be at most 100 characters')
-      .optional(),
-
-    email: z
-      .string()
-      .trim()
-      .email('Must be a valid email address')
-      .toLowerCase()
-      .optional(),
-  }),
 };

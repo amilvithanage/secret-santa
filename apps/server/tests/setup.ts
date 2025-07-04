@@ -9,6 +9,7 @@ jest.mock('../src/generated/prisma', () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn(),
     },
     giftExchange: {
       create: jest.fn(),

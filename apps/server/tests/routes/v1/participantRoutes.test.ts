@@ -1,22 +1,46 @@
 import request from 'supertest';
 import express from 'express';
-import participantRoutes from '../../src/routes/participantRoutes';
 import { CreateParticipantRequest, UpdateParticipantRequest } from '@secret-santa/shared-types';
-import DatabaseService from '../../src/services/database';
-import errorHandler from '../../src/middleware/errorHandler';
-import { Prisma } from '../../src/generated/prisma';
+import errorHandler from '../../../src/middleware/errorHandler';
+import { Prisma } from '../../../src/generated/prisma';
+
+// Mock the DatabaseService to use the global mocked Prisma from setup.ts
+const mockPrisma = {
+  participant: {
+    create: jest.fn(),
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
+  },
+};
+
+jest.mock('../../../src/services/database', () => ({
+  __esModule: true,
+  default: {
+    getInstance: jest.fn().mockReturnValue({
+      prisma: mockPrisma,
+    }),
+  },
+}));
+
+// Now import the routes after the mock is set up
+import participantRoutes from '../../../src/routes/v1/participantRoutes';
+import DatabaseService from '../../../src/services/database';
 
 // Create test app
 const app = express();
 app.use(express.json());
-app.use('/api/participants', participantRoutes);
+app.use('/api/v1/participants', participantRoutes);
 app.use(errorHandler); // Add error handler middleware
 
 // Mock successful database operations for integration tests
 beforeEach(() => {
-  const mockPrisma = DatabaseService.getInstance().prisma as any;
+  // Reset all mocks
+  jest.clearAllMocks();
 
-  // Mock successful participant creation
+  // Set up default mock return values
   mockPrisma.participant.create.mockResolvedValue({
     id: 'test-id',
     name: 'John Doe',
@@ -25,32 +49,21 @@ beforeEach(() => {
     updatedAt: new Date(),
   });
 
-  // Mock successful participant retrieval
   mockPrisma.participant.findMany.mockResolvedValue([]);
   mockPrisma.participant.findUnique.mockResolvedValue(null);
-
-  // Mock Prisma errors for update and delete operations
-  const mockUpdateError = new Prisma.PrismaClientKnownRequestError(
-    'Record to update not found',
-    {
-      code: 'P2025',
-      clientVersion: '5.0.0'
-    }
-  );
-  const mockDeleteError = new Prisma.PrismaClientKnownRequestError(
-    'Record to delete does not exist',
-    {
-      code: 'P2025',
-      clientVersion: '5.0.0'
-    }
-  );
-
-  mockPrisma.participant.update.mockRejectedValue(mockUpdateError);
-  mockPrisma.participant.delete.mockRejectedValue(mockDeleteError);
+  mockPrisma.participant.count.mockResolvedValue(0);
+  mockPrisma.participant.update.mockResolvedValue({
+    id: 'test-id',
+    name: 'Updated Name',
+    email: 'updated@example.com',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  mockPrisma.participant.delete.mockResolvedValue({});
 });
 
 describe('Participant Routes', () => {
-  describe('POST /api/participants', () => {
+  describe('POST /api/v1/participants', () => {
     it('should create a participant with valid data', async () => {
       const participantData: CreateParticipantRequest = {
         name: 'John Doe',
@@ -58,7 +71,7 @@ describe('Participant Routes', () => {
       };
 
       const response = await request(app)
-        .post('/api/participants')
+        .post('/api/v1/participants')
         .send(participantData)
         .expect(201);
 
@@ -74,7 +87,7 @@ describe('Participant Routes', () => {
       };
 
       const response = await request(app)
-        .post('/api/participants')
+        .post('/api/v1/participants')
         .send(invalidData)
         .expect(400);
 
@@ -90,7 +103,7 @@ describe('Participant Routes', () => {
       };
 
       const response = await request(app)
-        .post('/api/participants')
+        .post('/api/v1/participants')
         .send(invalidData)
         .expect(400);
 
@@ -106,7 +119,7 @@ describe('Participant Routes', () => {
       };
 
       const response = await request(app)
-        .post('/api/participants')
+        .post('/api/v1/participants')
         .send(invalidData)
         .expect(400);
 
@@ -116,21 +129,24 @@ describe('Participant Routes', () => {
     });
   });
 
-  describe('GET /api/participants', () => {
+  describe('GET /api/v1/participants', () => {
     it('should return all participants', async () => {
       const response = await request(app)
-        .get('/api/participants')
+        .get('/api/v1/participants')
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      // The response should have a data property that contains the participants array
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data.data)).toBe(true);
+      expect(response.body.data.pagination).toBeDefined();
     });
   });
 
-  describe('GET /api/participants/:id', () => {
+  describe('GET /api/v1/participants/:id', () => {
     it('should return 404 for non-existent participant', async () => {
       const response = await request(app)
-        .get('/api/participants/non-existent-id')
+        .get('/api/v1/participants/non-existent-id')
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -138,7 +154,7 @@ describe('Participant Routes', () => {
     });
   });
 
-  describe('PUT /api/participants/:id', () => {
+  describe('PUT /api/v1/participants/:id', () => {
     it('should accept valid update data', async () => {
       const updateData: UpdateParticipantRequest = {
         name: 'John Updated',
@@ -146,7 +162,7 @@ describe('Participant Routes', () => {
 
       // This will fail because participant doesn't exist, but validates the route structure
       const response = await request(app)
-        .put('/api/participants/test-id')
+        .put('/api/v1/participants/test-id')
         .send(updateData);
 
       // Should not be a validation error (400 with validation failed message)
@@ -159,7 +175,7 @@ describe('Participant Routes', () => {
       };
 
       const response = await request(app)
-        .put('/api/participants/test-id')
+        .put('/api/v1/participants/test-id')
         .send(invalidData)
         .expect(400);
 
@@ -169,10 +185,20 @@ describe('Participant Routes', () => {
     });
   });
 
-  describe('DELETE /api/participants/:id', () => {
+  describe('DELETE /api/v1/participants/:id', () => {
     it('should return 404 for non-existent participant', async () => {
+      // Mock the delete to throw a Prisma error for non-existent record
+      const mockError = new Prisma.PrismaClientKnownRequestError(
+        'Record to delete does not exist',
+        {
+          code: 'P2025',
+          clientVersion: '5.0.0'
+        }
+      );
+      mockPrisma.participant.delete.mockRejectedValue(mockError);
+
       const response = await request(app)
-        .delete('/api/participants/non-existent-id')
+        .delete('/api/v1/participants/non-existent-id')
         .expect(404);
 
       expect(response.body.success).toBe(false);

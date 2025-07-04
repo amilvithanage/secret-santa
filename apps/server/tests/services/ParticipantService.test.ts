@@ -1,34 +1,36 @@
-import { ParticipantService } from '../../src/services/participantService';
-import DatabaseService from '../../src/services/database';
 import { CreateParticipantRequest, UpdateParticipantRequest } from '@secret-santa/shared-types';
 import { Prisma } from '../../src/generated/prisma';
 
-// Mock the DatabaseService
-jest.mock('../../src/services/database');
+// Mock the DatabaseService to use the global mocked Prisma from setup.ts
+const mockPrisma = {
+  participant: {
+    create: jest.fn(),
+    findMany: jest.fn(),
+    findUnique: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+    count: jest.fn(),
+  },
+};
+
+jest.mock('../../src/services/database', () => ({
+  __esModule: true,
+  default: {
+    getInstance: jest.fn().mockReturnValue({
+      prisma: mockPrisma,
+    }),
+  },
+}));
+
+// Now import the service after the mock is set up
+import { ParticipantService } from '../../src/services/ParticipantService';
 
 describe('ParticipantService', () => {
   let participantService: ParticipantService;
-  let mockPrisma: any;
 
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-
-    // Create mock Prisma client
-    mockPrisma = {
-      participant: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-    };
-
-    // Mock DatabaseService.getInstance().prisma
-    (DatabaseService.getInstance as jest.Mock).mockReturnValue({
-      prisma: mockPrisma,
-    });
 
     participantService = new ParticipantService();
   });
@@ -70,16 +72,15 @@ describe('ParticipantService', () => {
         email: 'john@example.com',
       };
 
-      const mockError = new Prisma.PrismaClientKnownRequestError(
-        'Unique constraint failed',
-        {
-          code: 'P2002',
-          clientVersion: '5.0.0',
-          meta: { target: ['email'] }
-        }
-      );
+      const existingParticipant = {
+        id: 'existing-id',
+        name: 'Existing User',
+        email: 'john@example.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      mockPrisma.participant.create.mockRejectedValue(mockError);
+      mockPrisma.participant.findUnique.mockResolvedValue(existingParticipant);
 
       await expect(participantService.createParticipant(createData)).rejects.toThrow(
         'A participant with this email already exists'
@@ -87,8 +88,8 @@ describe('ParticipantService', () => {
     });
   });
 
-  describe('getAllParticipants', () => {
-    it('should return all participants', async () => {
+  describe('getParticipants', () => {
+    it('should return paginated participants', async () => {
       const mockParticipants = [
         {
           id: 'test-id-1',
@@ -107,17 +108,26 @@ describe('ParticipantService', () => {
       ];
 
       mockPrisma.participant.findMany.mockResolvedValue(mockParticipants);
+      mockPrisma.participant.count.mockResolvedValue(2);
 
-      const result = await participantService.getAllParticipants();
+      const result = await participantService.getParticipants();
 
       expect(mockPrisma.participant.findMany).toHaveBeenCalledWith({
         orderBy: { createdAt: 'desc' },
         skip: 0,
-        take: 100,
+        take: 10,
       });
-      expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('test-id-1');
-      expect(result[1].id).toBe('test-id-2');
+      expect(mockPrisma.participant.count).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].id).toBe('test-id-1');
+      expect(result.data[1].id).toBe('test-id-2');
+      expect(result.pagination).toEqual({
+        page: 1,
+        limit: 10,
+        total: 2,
+        totalPages: 1,
+      });
     });
 
     it('should return participants with custom pagination', async () => {
@@ -132,16 +142,25 @@ describe('ParticipantService', () => {
       ];
 
       mockPrisma.participant.findMany.mockResolvedValue(mockParticipants);
+      mockPrisma.participant.count.mockResolvedValue(1);
 
-      const result = await participantService.getAllParticipants(10, 5);
+      const result = await participantService.getParticipants(2, 5);
 
       expect(mockPrisma.participant.findMany).toHaveBeenCalledWith({
         orderBy: { createdAt: 'desc' },
-        skip: 10,
+        skip: 5,
         take: 5,
       });
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('test-id-3');
+      expect(mockPrisma.participant.count).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('test-id-3');
+      expect(result.pagination).toEqual({
+        page: 2,
+        limit: 5,
+        total: 1,
+        totalPages: 1,
+      });
     });
   });
 
@@ -165,12 +184,12 @@ describe('ParticipantService', () => {
       expect(result?.id).toBe('test-id');
     });
 
-    it('should return null when participant not found', async () => {
+    it('should throw NotFoundError when participant not found', async () => {
       mockPrisma.participant.findUnique.mockResolvedValue(null);
 
-      const result = await participantService.getParticipantById('non-existent-id');
-
-      expect(result).toBeNull();
+      await expect(participantService.getParticipantById('non-existent-id')).rejects.toThrow(
+        'Participant not found'
+      );
     });
   });
 
@@ -246,32 +265,5 @@ describe('ParticipantService', () => {
     });
   });
 
-  describe('getParticipantByEmail', () => {
-    it('should return participant when found by email', async () => {
-      const mockParticipant = {
-        id: 'test-id',
-        name: 'John Doe',
-        email: 'john@example.com',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
 
-      mockPrisma.participant.findUnique.mockResolvedValue(mockParticipant);
-
-      const result = await participantService.getParticipantByEmail('john@example.com');
-
-      expect(mockPrisma.participant.findUnique).toHaveBeenCalledWith({
-        where: { email: 'john@example.com' },
-      });
-      expect(result?.email).toBe('john@example.com');
-    });
-
-    it('should return null when participant not found by email', async () => {
-      mockPrisma.participant.findUnique.mockResolvedValue(null);
-
-      const result = await participantService.getParticipantByEmail('nonexistent@example.com');
-
-      expect(result).toBeNull();
-    });
-  });
 });
