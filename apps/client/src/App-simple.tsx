@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react";
-import { ParticipantManager } from "./components/ParticipantManager";
-import { GiftExchangeManager } from "./components/GiftExchangeManager";
-import { ExchangeDetails } from "./components/ExchangeDetails";
-import type { GiftExchange } from "./types/api";
-import "./App.css";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<
-    "participants" | "exchanges" | "details"
-  >("participants");
-  const [selectedExchange, setSelectedExchange] = useState<GiftExchange | null>(
-    null,
-  );
   const [serverStatus, setServerStatus] = useState<
     "checking" | "online" | "offline"
   >("checking");
+  const [activeTab, setActiveTab] = useState<"participants" | "exchanges">(
+    "participants",
+  );
 
   // Check server status on load
   useEffect(() => {
@@ -34,15 +26,6 @@ function App() {
 
     checkServer();
   }, []);
-
-  const handleExchangeSelect = (exchange: GiftExchange) => {
-    try {
-      setSelectedExchange(exchange);
-      setActiveTab("details");
-    } catch (error) {
-      console.error("Error selecting exchange:", error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -100,19 +83,6 @@ function App() {
             >
               🎁 Gift Exchanges
             </button>
-            {selectedExchange && (
-              <button
-                type="button"
-                onClick={() => setActiveTab("details")}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === "details"
-                    ? "border-blue-500 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-              >
-                📋 {selectedExchange.name}
-              </button>
-            )}
           </div>
         </div>
       </nav>
@@ -135,35 +105,57 @@ function App() {
           </div>
         )}
 
-        {(() => {
-          try {
-            if (activeTab === "participants") {
-              return <ParticipantManager />;
-            }
-            if (activeTab === "exchanges") {
-              return (
-                <GiftExchangeManager onExchangeSelect={handleExchangeSelect} />
-              );
-            }
-            if (activeTab === "details" && selectedExchange) {
-              return <ExchangeDetails exchange={selectedExchange} />;
-            }
-            return null;
-          } catch (error) {
-            console.error("Error rendering component:", error);
-            return (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <h3 className="text-sm font-medium text-red-800">
-                  Something went wrong
-                </h3>
-                <p className="mt-1 text-sm text-red-700">
-                  Please refresh the page and try again. Check the console for
-                  more details.
-                </p>
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            {activeTab === "participants"
+              ? "Participants Management"
+              : "Gift Exchanges Management"}
+          </h2>
+
+          {activeTab === "participants" ? (
+            <div>
+              <p className="text-gray-600 mb-4">
+                Manage people who can participate in Secret Santa exchanges.
+              </p>
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                  onClick={() =>
+                    alert("Add participant functionality coming soon!")
+                  }
+                >
+                  + Add Participant
+                </button>
+                <div className="text-sm text-gray-500">
+                  No participants yet. Click the button above to add your first
+                  participant.
+                </div>
               </div>
-            );
-          }
-        })()}
+            </div>
+          ) : (
+            <div>
+              <p className="text-gray-600 mb-4">
+                Create and manage Secret Santa gift exchanges.
+              </p>
+              <div className="space-y-4">
+                <button
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700"
+                  onClick={() =>
+                    alert("Create exchange functionality coming soon!")
+                  }
+                >
+                  + Create Exchange
+                </button>
+                <div className="text-sm text-gray-500">
+                  No gift exchanges yet. Click the button above to create your
+                  first exchange.
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
