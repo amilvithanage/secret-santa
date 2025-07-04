@@ -13,26 +13,28 @@ This package is automatically installed when you run `npm install` from the root
 ## Usage
 
 ```typescript
-import { 
-  Participant, 
+import {
+  Participant,
   CreateParticipantRequest,
   GiftExchange,
   GiftExchangeStatus,
   Assignment,
   ExclusionRule,
-  ApiResponse 
-} from '@secret-santa/shared-types';
+  ApiResponse,
+} from "@secret-santa/shared-types";
 ```
 
 ## Types Included
 
 ### Participant Types
+
 - `Participant` - Core participant interface
 - `CreateParticipantRequest` - Request payload for creating participants
 - `UpdateParticipantRequest` - Request payload for updating participants
 - `ParticipantResponse` - API response format for participants
 
 ### Gift Exchange Types
+
 - `GiftExchange` - Core gift exchange interface
 - `GiftExchangeStatus` - Enum for exchange statuses (DRAFT, PARTICIPANTS_ADDED, ASSIGNED, COMPLETED)
 - `CreateGiftExchangeRequest` - Request payload for creating exchanges
@@ -42,17 +44,20 @@ import {
 - `AddParticipantToExchangeRequest` - Request payload for adding participants
 
 ### Assignment Types
+
 - `Assignment` - Core assignment interface
 - `AssignmentResponse` - API response format for assignments
 - `CreateAssignmentsRequest` - Request payload for creating assignments
 - `AssignmentResult` - Result of assignment algorithm
 
 ### Exclusion Rule Types
+
 - `ExclusionRule` - Core exclusion rule interface
 - `CreateExclusionRuleRequest` - Request payload for creating exclusion rules
 - `ExclusionRuleResponse` - API response format for exclusion rules
 
 ### API Types
+
 - `ApiResponse<T>` - Generic API response wrapper
 - `PaginatedResponse<T>` - Paginated API response wrapper
 - `ApiError` - Error response format
@@ -62,21 +67,25 @@ import {
 ## Development
 
 ### Building
+
 ```bash
 npm run build
 ```
 
 ### Development Mode (Watch)
+
 ```bash
 npm run dev
 ```
 
 ### Testing
+
 ```bash
 npm run test
 ```
 
 ### Cleaning
+
 ```bash
 npm run clean
 ```
