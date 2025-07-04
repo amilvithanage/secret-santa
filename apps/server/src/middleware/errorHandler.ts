@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { ResponseHelper } from "../utils/responseHelper";
+import { ResponseHelper } from "../utils/ResponseHelper";
 import { ValidationError } from "../utils/errors";
 
 interface CustomError extends Error {

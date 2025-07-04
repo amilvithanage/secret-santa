@@ -5,7 +5,7 @@ import {
   UpdateParticipantRequest,
 } from "@secret-santa/shared-types";
 import { NotFoundError } from "../utils/errors";
-import { ResponseHelper } from "../utils/responseHelper";
+import { ResponseHelper } from "../utils/ResponseHelper";
 
 export class ParticipantController {
   constructor(private participantService = new ParticipantService()) {}

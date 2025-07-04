@@ -6,7 +6,7 @@ import {
   AddParticipantToExchangeRequest,
   ApiResponse,
 } from "@secret-santa/shared-types";
-import { ResponseHelper } from "../utils/responseHelper";
+import { ResponseHelper } from "../utils/ResponseHelper";
 import { NotFoundError } from "../utils/errors";
 
 /**
