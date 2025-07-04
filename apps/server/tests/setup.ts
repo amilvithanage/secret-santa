@@ -9,7 +9,6 @@ jest.mock("../src/generated/prisma", () => ({
       findUnique: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
-      count: jest.fn(),
     },
     giftExchange: {
       create: jest.fn(),
@@ -30,6 +29,7 @@ jest.mock("../src/generated/prisma", () => ({
       findMany: jest.fn(),
       findUnique: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     exclusionRule: {
       create: jest.fn(),
@@ -40,6 +40,7 @@ jest.mock("../src/generated/prisma", () => ({
     $connect: jest.fn(),
     $disconnect: jest.fn(),
     $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
   })),
   Prisma: {
     PrismaClientKnownRequestError: class PrismaClientKnownRequestError extends Error {

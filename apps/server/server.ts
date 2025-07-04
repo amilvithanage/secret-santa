@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import routes from "./src/routes/index";
 import DatabaseService from "./src/services/database";
 import { NotFoundError } from "./src/utils/errors";
-import { ResponseHelper } from "./src/utils/responseHelper";
+import { ResponseHelper } from "./src/utils/ResponseHelper";
 import errorHandler from "./src/middleware/errorHandler";
 
 // Load environment variables
