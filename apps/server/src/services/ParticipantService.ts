@@ -1,26 +1,28 @@
-import { Prisma } from '../generated/prisma';
+import { Prisma } from "../generated/prisma";
 import {
   CreateParticipantRequest,
   UpdateParticipantRequest,
   ParticipantResponse,
   PaginatedResponse,
-} from '@secret-santa/shared-types';
-import DatabaseService from './database';
-import { NotFoundError, BadRequestError, ConflictError } from '../utils/errors';
+} from "@secret-santa/shared-types";
+import DatabaseService from "./database";
+import { NotFoundError, BadRequestError, ConflictError } from "../utils/errors";
 
 export class ParticipantService {
   private db = DatabaseService.getInstance().prisma;
 
-  async createParticipant(data: CreateParticipantRequest): Promise<ParticipantResponse> {
+  async createParticipant(
+    data: CreateParticipantRequest,
+  ): Promise<ParticipantResponse> {
     // Check for duplicate email
     const existingParticipant = await this.db.participant.findUnique({
-      where: { email: data.email }
+      where: { email: data.email },
     });
 
     if (existingParticipant) {
-      throw new ConflictError('A participant with this email already exists');
+      throw new ConflictError("A participant with this email already exists");
     }
-    
+
     try {
       const participant = await this.db.participant.create({
         data: {
@@ -36,16 +38,19 @@ export class ParticipantService {
   }
 
   // Added optional pagination params: skip, take
-  async getParticipants(page: number = 1, limit: number = 10): Promise<PaginatedResponse<ParticipantResponse>> {
+  async getParticipants(
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponse<ParticipantResponse>> {
     const skip = (page - 1) * limit;
 
     const [participants, total] = await Promise.all([
       this.db.participant.findMany({
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
-        take: limit
+        take: limit,
       }),
-      this.db.participant.count()
+      this.db.participant.count(),
     ]);
 
     const mappedParticipants = participants.map(this.mapToResponse);
@@ -57,8 +62,8 @@ export class ParticipantService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -67,19 +72,22 @@ export class ParticipantService {
       where: { id },
     });
     if (!participant) {
-      throw new NotFoundError('Participant not found');
+      throw new NotFoundError("Participant not found");
     }
     return this.mapToResponse(participant);
   }
 
-  async updateParticipant(id: string, data: Partial<UpdateParticipantRequest>): Promise<ParticipantResponse> {
+  async updateParticipant(
+    id: string,
+    data: Partial<UpdateParticipantRequest>,
+  ): Promise<ParticipantResponse> {
     // Check for duplicate email
     const existingParticipant = await this.db.participant.findUnique({
-      where: { email: data.email }
+      where: { email: data.email },
     });
 
     if (existingParticipant && existingParticipant.id !== id) {
-      throw new ConflictError('A participant with this email already exists');
+      throw new ConflictError("A participant with this email already exists");
     }
 
     try {
@@ -94,11 +102,13 @@ export class ParticipantService {
       return this.mapToResponse(participant);
     } catch (error: unknown) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new NotFoundError('Participant not found');
+        if (error.code === "P2025") {
+          throw new NotFoundError("Participant not found");
         }
-        if (error.code === 'P2002') {
-          throw new BadRequestError('A participant with this email already exists');
+        if (error.code === "P2002") {
+          throw new BadRequestError(
+            "A participant with this email already exists",
+          );
         }
       }
       throw error;
@@ -112,44 +122,49 @@ export class ParticipantService {
       });
     } catch (error: unknown) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new NotFoundError('Participant not found');
+        if (error.code === "P2025") {
+          throw new NotFoundError("Participant not found");
         }
       }
       throw error;
     }
   }
 
-
   /**
    * Search participants by name or email
    */
-  async searchParticipants(query: string, page: number = 1, limit: number = 10): Promise<PaginatedResponse<ParticipantResponse>> {
+  async searchParticipants(
+    query: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponse<ParticipantResponse>> {
     const skip = (page - 1) * limit;
 
     const [participants, total] = await Promise.all([
       this.db.participant.findMany({
         where: {
           OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } }
-          ]
+            { name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
-        take: limit
+        take: limit,
       }),
       this.db.participant.count({
         where: {
           OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { email: { contains: query, mode: 'insensitive' } }
-          ]
-        }
-      })
+            { name: { contains: query, mode: "insensitive" } },
+            { email: { contains: query, mode: "insensitive" } },
+          ],
+        },
+      }),
     ]);
 
-    const mappedParticipants = participants.map((p: any) => this.mapToResponse(p));
+    const mappedParticipants = participants.map((p: any) =>
+      this.mapToResponse(p),
+    );
 
     return {
       success: true,
@@ -158,8 +173,8 @@ export class ParticipantService {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

@@ -1,12 +1,12 @@
-import request from 'supertest';
-import express from 'express';
+import request from "supertest";
+import express from "express";
 import {
   CreateGiftExchangeRequest,
   UpdateGiftExchangeRequest,
   AddParticipantToExchangeRequest,
-  GiftExchangeStatus
-} from '@secret-santa/shared-types';
-import errorHandler from '../../../src/middleware/errorHandler';
+  GiftExchangeStatus,
+} from "@secret-santa/shared-types";
+import errorHandler from "../../../src/middleware/errorHandler";
 
 // Create mock functions that we can control
 const mockPrisma = {
@@ -32,16 +32,16 @@ const mockPrisma = {
 };
 
 // Mock the services before importing anything else
-jest.mock('../../../src/services/database', () => ({
+jest.mock("../../../src/services/database", () => ({
   __esModule: true,
   default: {
     getInstance: jest.fn(() => ({
       prisma: mockPrisma,
-    }))
-  }
+    })),
+  },
 }));
 
-jest.mock('../../../src/services/ParticipantService', () => ({
+jest.mock("../../../src/services/ParticipantService", () => ({
   ParticipantService: jest.fn().mockImplementation(() => ({
     getParticipantById: jest.fn(),
     createParticipant: jest.fn(),
@@ -49,19 +49,19 @@ jest.mock('../../../src/services/ParticipantService', () => ({
     updateParticipant: jest.fn(),
     deleteParticipant: jest.fn(),
     searchParticipants: jest.fn(),
-  }))
+  })),
 }));
 
 // Import after mocking
-import giftExchangeRoutes from '../../../src/routes/v1/giftExchangeRoutes';
-import DatabaseService from '../../../src/services/database';
+import giftExchangeRoutes from "../../../src/routes/v1/giftExchangeRoutes";
+import DatabaseService from "../../../src/services/database";
 
 const app = express();
 app.use(express.json());
-app.use('/api/v1/gift-exchanges', giftExchangeRoutes);
+app.use("/api/v1/gift-exchanges", giftExchangeRoutes);
 app.use(errorHandler);
 
-describe('Gift Exchange Routes', () => {
+describe("Gift Exchange Routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -69,12 +69,12 @@ describe('Gift Exchange Routes', () => {
     mockPrisma.giftExchange.findFirst.mockResolvedValue(null); // For duplicate check
 
     const mockGiftExchangeData = {
-      id: 'test-exchange-id',
-      name: 'Christmas 2024',
+      id: "test-exchange-id",
+      name: "Christmas 2024",
       year: 2024,
       status: GiftExchangeStatus.DRAFT,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
       participants: [],
       assignments: [],
     };
@@ -87,14 +87,14 @@ describe('Gift Exchange Routes', () => {
 
     // Mock findUnique to return data for existing exchanges and null for non-existent ones
     mockPrisma.giftExchange.findUnique.mockImplementation((args: any) => {
-      if (args.where.id === 'test-id' || args.where.id === 'test-exchange-id') {
+      if (args.where.id === "test-id" || args.where.id === "test-exchange-id") {
         return Promise.resolve({
           id: args.where.id,
-          name: 'Christmas 2024',
+          name: "Christmas 2024",
           year: 2024,
           status: GiftExchangeStatus.DRAFT,
-          createdAt: new Date('2024-01-01'),
-          updatedAt: new Date('2024-01-01'),
+          createdAt: new Date("2024-01-01"),
+          updatedAt: new Date("2024-01-01"),
           participants: [],
           assignments: [],
         });
@@ -106,11 +106,11 @@ describe('Gift Exchange Routes', () => {
     mockPrisma.giftExchange.update.mockImplementation((args: any) => {
       return Promise.resolve({
         id: args.where.id,
-        name: args.data.name || 'Christmas 2024',
+        name: args.data.name || "Christmas 2024",
         year: args.data.year || 2024,
         status: args.data.status || GiftExchangeStatus.DRAFT,
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
         participants: [],
         assignments: [],
       });
@@ -118,46 +118,46 @@ describe('Gift Exchange Routes', () => {
 
     // Mock delete method
     mockPrisma.giftExchange.delete.mockResolvedValue({
-      id: 'test-id',
-      name: 'Christmas 2024',
+      id: "test-id",
+      name: "Christmas 2024",
       year: 2024,
       status: GiftExchangeStatus.DRAFT,
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
     });
 
     // Mock participant service methods
     const mockParticipant = {
-      id: 'test-participant-id',
-      name: 'John Doe',
-      email: 'john@example.com',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+      id: "test-participant-id",
+      name: "John Doe",
+      email: "john@example.com",
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
     };
 
     // Mock participant-related operations
     mockPrisma.participant.findUnique.mockResolvedValue(mockParticipant);
 
     mockPrisma.giftExchangeParticipant.create.mockResolvedValue({
-      id: 'participant_exchange_1',
-      giftExchangeId: 'test-id',
-      participantId: 'test-participant-id',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+      id: "participant_exchange_1",
+      giftExchangeId: "test-id",
+      participantId: "test-participant-id",
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
     });
     mockPrisma.giftExchangeParticipant.delete.mockResolvedValue({
-      id: 'participant_exchange_1',
-      giftExchangeId: 'test-id',
-      participantId: 'test-participant-id',
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+      id: "participant_exchange_1",
+      giftExchangeId: "test-id",
+      participantId: "test-participant-id",
+      createdAt: new Date("2024-01-01"),
+      updatedAt: new Date("2024-01-01"),
     });
 
     // Mock successful participant operations
     mockPrisma.participant.findUnique.mockResolvedValue({
-      id: 'test-participant-id',
-      name: 'John Doe',
-      email: 'john@example.com',
+      id: "test-participant-id",
+      name: "John Doe",
+      email: "john@example.com",
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -166,77 +166,77 @@ describe('Gift Exchange Routes', () => {
     mockPrisma.giftExchangeParticipant.create.mockResolvedValue({});
     mockPrisma.giftExchangeParticipant.findMany.mockResolvedValue([]);
   });
-  describe('POST /api/v1/gift-exchanges', () => {
-    it('should create a gift exchange with valid data', async () => {
+  describe("POST /api/v1/gift-exchanges", () => {
+    it("should create a gift exchange with valid data", async () => {
       const giftExchangeData: CreateGiftExchangeRequest = {
-        name: 'Christmas 2024',
+        name: "Christmas 2024",
         year: 2024,
       };
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges')
+        .post("/api/v1/gift-exchanges")
         .send(giftExchangeData)
         .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
-      expect(response.body.message).toBe('Gift exchange created successfully');
+      expect(response.body.message).toBe("Gift exchange created successfully");
     });
 
-    it('should return 400 for missing required fields', async () => {
+    it("should return 400 for missing required fields", async () => {
       const invalidData = {
-        name: 'Christmas 2024',
+        name: "Christmas 2024",
         // year is missing
       };
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges')
+        .post("/api/v1/gift-exchanges")
         .send(invalidData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.message).toContain('year');
+      expect(response.body.error).toBe("Validation failed");
+      expect(response.body.message).toContain("year");
     });
 
-    it('should return 400 for empty name', async () => {
+    it("should return 400 for empty name", async () => {
       const invalidData = {
-        name: '',
+        name: "",
         year: 2024,
       };
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges')
+        .post("/api/v1/gift-exchanges")
         .send(invalidData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.message).toContain('name is required');
+      expect(response.body.error).toBe("Validation failed");
+      expect(response.body.message).toContain("name is required");
     });
 
-    it('should return 400 for invalid year', async () => {
+    it("should return 400 for invalid year", async () => {
       const currentYear = new Date().getFullYear();
       const invalidData = {
-        name: 'Christmas 2024',
+        name: "Christmas 2024",
         year: currentYear - 20, // Too far in the past
       };
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges')
+        .post("/api/v1/gift-exchanges")
         .send(invalidData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.message).toContain('year must be 2020 or later');
+      expect(response.body.error).toBe("Validation failed");
+      expect(response.body.message).toContain("year must be 2020 or later");
     });
   });
 
-  describe('GET /api/v1/gift-exchanges', () => {
-    it('should return all gift exchanges', async () => {
+  describe("GET /api/v1/gift-exchanges", () => {
+    it("should return all gift exchanges", async () => {
       const response = await request(app)
-        .get('/api/v1/gift-exchanges')
+        .get("/api/v1/gift-exchanges")
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -244,64 +244,64 @@ describe('Gift Exchange Routes', () => {
     });
   });
 
-  describe('GET /api/v1/gift-exchanges/:id', () => {
-    it('should return 404 for non-existent gift exchange', async () => {
+  describe("GET /api/v1/gift-exchanges/:id", () => {
+    it("should return 404 for non-existent gift exchange", async () => {
       const response = await request(app)
-        .get('/api/v1/gift-exchanges/non-existent-id')
+        .get("/api/v1/gift-exchanges/non-existent-id")
         .expect(404);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Gift exchange not found');
+      expect(response.body.error).toBe("Gift exchange not found");
     });
   });
 
-  describe('PUT /api/v1/gift-exchanges/:id', () => {
-    it('should accept valid update data', async () => {
+  describe("PUT /api/v1/gift-exchanges/:id", () => {
+    it("should accept valid update data", async () => {
       const updateData: UpdateGiftExchangeRequest = {
-        name: 'Updated Christmas 2024',
+        name: "Updated Christmas 2024",
       };
 
       // This will fail because gift exchange doesn't exist, but validates the route structure
       const response = await request(app)
-        .put('/api/v1/gift-exchanges/test-id')
+        .put("/api/v1/gift-exchanges/test-id")
         .send(updateData);
 
       // Should not be a validation error (400 with validation failed message)
-      expect(response.body.error).not.toBe('Validation failed');
+      expect(response.body.error).not.toBe("Validation failed");
     });
 
-    it('should return 400 for invalid year in update', async () => {
+    it("should return 400 for invalid year in update", async () => {
       const currentYear = new Date().getFullYear();
       const invalidData = {
         year: currentYear + 20, // Too far in the future
       };
 
       const response = await request(app)
-        .put('/api/v1/gift-exchanges/test-id')
+        .put("/api/v1/gift-exchanges/test-id")
         .send(invalidData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.message).toContain('year must be 2030 or earlier');
+      expect(response.body.error).toBe("Validation failed");
+      expect(response.body.message).toContain("year must be 2030 or earlier");
     });
   });
 
-  describe('DELETE /api/v1/gift-exchanges/:id', () => {
-    it('should return 404 for non-existent gift exchange', async () => {
+  describe("DELETE /api/v1/gift-exchanges/:id", () => {
+    it("should return 404 for non-existent gift exchange", async () => {
       const response = await request(app)
-        .delete('/api/v1/gift-exchanges/non-existent-id')
+        .delete("/api/v1/gift-exchanges/non-existent-id")
         .expect(404);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Gift exchange not found');
+      expect(response.body.error).toBe("Gift exchange not found");
     });
   });
 
-  describe('GET /api/v1/gift-exchanges/:id/participants', () => {
-    it('should return participants for gift exchange', async () => {
+  describe("GET /api/v1/gift-exchanges/:id/participants", () => {
+    it("should return participants for gift exchange", async () => {
       const response = await request(app)
-        .get('/api/v1/gift-exchanges/test-id/participants')
+        .get("/api/v1/gift-exchanges/test-id/participants")
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -309,17 +309,17 @@ describe('Gift Exchange Routes', () => {
     });
   });
 
-  describe('POST /api/v1/gift-exchanges/:id/participants', () => {
-    it('should add participant to gift exchange with valid data', async () => {
+  describe("POST /api/v1/gift-exchanges/:id/participants", () => {
+    it("should add participant to gift exchange with valid data", async () => {
       const participantData: AddParticipantToExchangeRequest = {
-        participantId: 'test-participant-id',
+        participantId: "test-participant-id",
       };
 
       // Mock the gift exchange lookup to return a valid exchange
       const mockPrisma = DatabaseService.getInstance().prisma as any;
       mockPrisma.giftExchange.findUnique.mockResolvedValueOnce({
-        id: 'test-id',
-        name: 'Christmas 2024',
+        id: "test-id",
+        name: "Christmas 2024",
         year: 2024,
         status: GiftExchangeStatus.DRAFT,
         createdAt: new Date(),
@@ -330,8 +330,8 @@ describe('Gift Exchange Routes', () => {
 
       // Mock the update call to succeed
       mockPrisma.giftExchange.update.mockResolvedValueOnce({
-        id: 'test-id',
-        name: 'Christmas 2024',
+        id: "test-id",
+        name: "Christmas 2024",
         year: 2024,
         status: GiftExchangeStatus.PARTICIPANTS_ADDED,
         createdAt: new Date(),
@@ -341,48 +341,52 @@ describe('Gift Exchange Routes', () => {
       });
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges/test-id/participants')
+        .post("/api/v1/gift-exchanges/test-id/participants")
         .send(participantData)
         .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBe(null);
-      expect(response.body.message).toBe('Participant added to gift exchange successfully');
-      expect(response.body.message).toBe('Participant added to gift exchange successfully');
+      expect(response.body.message).toBe(
+        "Participant added to gift exchange successfully",
+      );
+      expect(response.body.message).toBe(
+        "Participant added to gift exchange successfully",
+      );
     });
 
-    it('should return 400 for missing participantId', async () => {
+    it("should return 400 for missing participantId", async () => {
       const invalidData = {
         // participantId is missing
       };
 
       const response = await request(app)
-        .post('/api/v1/gift-exchanges/test-id/participants')
+        .post("/api/v1/gift-exchanges/test-id/participants")
         .send(invalidData)
         .expect(400);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Validation failed');
-      expect(response.body.message).toContain('participantId');
+      expect(response.body.error).toBe("Validation failed");
+      expect(response.body.message).toContain("participantId");
     });
   });
 
-  describe('DELETE /api/v1/gift-exchanges/:id/participants/:participantId', () => {
-    it('should remove participant from gift exchange', async () => {
+  describe("DELETE /api/v1/gift-exchanges/:id/participants/:participantId", () => {
+    it("should remove participant from gift exchange", async () => {
       // Mock successful removal
       const mockPrisma = DatabaseService.getInstance().prisma as any;
       mockPrisma.giftExchangeParticipant.findFirst.mockResolvedValueOnce({
-        id: 'participant-exchange-1',
-        giftExchangeId: 'test-id',
-        participantId: 'test-participant-id',
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
+        id: "participant-exchange-1",
+        giftExchangeId: "test-id",
+        participantId: "test-participant-id",
+        createdAt: new Date("2024-01-01"),
+        updatedAt: new Date("2024-01-01"),
       });
       mockPrisma.giftExchangeParticipant.delete.mockResolvedValueOnce({});
       mockPrisma.giftExchangeParticipant.count.mockResolvedValueOnce(2);
       mockPrisma.giftExchange.findUnique.mockResolvedValueOnce({
-        id: 'test-id',
-        name: 'Christmas 2024',
+        id: "test-id",
+        name: "Christmas 2024",
         year: 2024,
         status: GiftExchangeStatus.PARTICIPANTS_ADDED,
         createdAt: new Date(),
@@ -392,24 +396,32 @@ describe('Gift Exchange Routes', () => {
       });
 
       const response = await request(app)
-        .delete('/api/v1/gift-exchanges/test-id/participants/test-participant-id')
+        .delete(
+          "/api/v1/gift-exchanges/test-id/participants/test-participant-id",
+        )
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Participant removed from gift exchange successfully');
+      expect(response.body.message).toBe(
+        "Participant removed from gift exchange successfully",
+      );
     });
 
-    it('should return 400 for participant not in exchange', async () => {
+    it("should return 400 for participant not in exchange", async () => {
       // Mock participant not found in exchange
       const mockPrisma = DatabaseService.getInstance().prisma as any;
       mockPrisma.giftExchangeParticipant.findFirst.mockResolvedValueOnce(null);
 
       const response = await request(app)
-        .delete('/api/v1/gift-exchanges/test-id/participants/non-existent-participant')
+        .delete(
+          "/api/v1/gift-exchanges/test-id/participants/non-existent-participant",
+        )
         .expect(404);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toBe('Participant is not part of this gift exchange');
+      expect(response.body.error).toBe(
+        "Participant is not part of this gift exchange",
+      );
     });
   });
 });
