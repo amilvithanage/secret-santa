@@ -44,7 +44,6 @@ export const getParticipantsQuerySchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 10)),
-    search: z.string().optional(),
   }),
 });
 

@@ -159,6 +159,27 @@ export class AssignmentService {
   }
 
   /**
+   * Get assignment for a specific participant in a gift exchange
+   */
+  async getAssignmentForParticipant(
+    giftExchangeId: string,
+    participantId: string,
+  ): Promise<AssignmentResponse | null> {
+    const assignment = await this.db.assignment.findFirst({
+      where: {
+        giftExchangeId,
+        giverId: participantId,
+      },
+      include: {
+        giver: true,
+        receiver: true,
+      },
+    });
+
+    return assignment ? this.mapToResponse(assignment) : null;
+  }
+
+  /**
    * Delete all assignments for a gift exchange
    */
   async deleteAssignmentsByGiftExchange(giftExchangeId: string): Promise<void> {

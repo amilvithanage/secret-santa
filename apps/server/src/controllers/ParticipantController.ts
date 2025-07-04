@@ -1,20 +1,25 @@
 import { Request, Response, NextFunction } from "express";
 import { ParticipantService } from "../services/ParticipantService";
 import {
+  ApiResponse,
   CreateParticipantRequest,
   UpdateParticipantRequest,
 } from "@secret-santa/shared-types";
-import { NotFoundError } from "../utils/errors";
 import { ResponseHelper } from "../utils/ResponseHelper";
+import { NotFoundError } from "../utils/errors";
 
 export class ParticipantController {
   constructor(private participantService = new ParticipantService()) {}
 
+  /**
+   * Create a new participant
+   * POST /api/v1/participants
+   */
   createParticipant = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
       const data: CreateParticipantRequest = req.body;
       const participant = await this.participantService.createParticipant(data);
@@ -28,11 +33,15 @@ export class ParticipantController {
     }
   };
 
-  getAllParticipants = async (
+  /**
+   * Get all participants
+   * GET /api/v1/participants
+   */
+  getParticipants = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
       const limit = req.query.limit
@@ -59,11 +68,15 @@ export class ParticipantController {
     }
   };
 
+  /**
+   * Get participant by ID
+   * GET /api/v1/participants/:id
+   */
   getParticipantById = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const participant = await this.participantService.getParticipantById(id);
@@ -74,11 +87,15 @@ export class ParticipantController {
     }
   };
 
+  /**
+   * Update participant
+   * PUT /api/v1/participants/:id
+   */
   updateParticipant = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       const data: UpdateParticipantRequest = req.body;
@@ -96,11 +113,15 @@ export class ParticipantController {
     }
   };
 
+  /**
+   * Delete participant
+   * DELETE /api/v1/participants/:id
+   */
   deleteParticipant = async (
     req: Request,
     res: Response,
     next: NextFunction,
-  ) => {
+  ): Promise<void> => {
     try {
       const { id } = req.params;
       await this.participantService.deleteParticipant(id);

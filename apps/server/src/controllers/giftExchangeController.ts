@@ -1,18 +1,11 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { GiftExchangeService } from "../services/giftExchangeService";
 import {
-  CreateGiftExchangeRequest,
-  UpdateGiftExchangeRequest,
-  AddParticipantToExchangeRequest,
   ApiResponse,
+  CreateGiftExchangeRequest,
 } from "@secret-santa/shared-types";
 import { ResponseHelper } from "../utils/ResponseHelper";
-import { NotFoundError } from "../utils/errors";
 
-/**
- * Gift Exchange Controller - HTTP request/response handling for gift exchanges
- * Handles API endpoints and delegates business logic to GiftExchangeService
- */
 export class GiftExchangeController {
   private giftExchangeService: GiftExchangeService;
 
@@ -22,7 +15,7 @@ export class GiftExchangeController {
 
   /**
    * Create a new gift exchange
-   * POST /api/gift-exchanges
+   * POST /api/v1/gift-exchanges
    */
   createGiftExchange = async (
     req: Request,
@@ -45,7 +38,7 @@ export class GiftExchangeController {
 
   /**
    * Get all gift exchanges
-   * GET /api/gift-exchanges
+   * GET /api/v1/gift-exchanges
    */
   getGiftExchanges = async (
     req: Request,
@@ -57,10 +50,12 @@ export class GiftExchangeController {
       const limit = req.query.limit
         ? parseInt(req.query.limit as string, 10)
         : 10;
+      const includeParticipants = req.query.includeParticipants === "true";
 
       const result = await this.giftExchangeService.getGiftExchanges(
         page,
         limit,
+        includeParticipants,
       );
       ResponseHelper.success(res, result);
     } catch (error) {
@@ -70,7 +65,7 @@ export class GiftExchangeController {
 
   /**
    * Get gift exchange by ID
-   * GET /api/gift-exchanges/:id
+   * GET /api/v1/gift-exchanges/:id
    */
   getGiftExchangeById = async (
     req: Request,
@@ -79,13 +74,16 @@ export class GiftExchangeController {
   ): Promise<void> => {
     try {
       const { id } = req.params;
-      const giftExchange =
-        await this.giftExchangeService.getGiftExchangeById(id);
-      if (!giftExchange) {
-        throw new NotFoundError("Gift exchange not found");
-      } else {
-        ResponseHelper.success(res, giftExchange);
-      }
+      const includeParticipants = req.query.includeParticipants === "true";
+      const includeAssignments = req.query.includeAssignments === "true";
+
+      const giftExchange = await this.giftExchangeService.getGiftExchangeById(
+        id,
+        includeParticipants,
+        includeAssignments,
+      );
+
+      ResponseHelper.success(res, giftExchange);
     } catch (error) {
       next(error);
     }
@@ -93,7 +91,7 @@ export class GiftExchangeController {
 
   /**
    * Update gift exchange
-   * PUT /api/gift-exchanges/:id
+   * PUT /api/v1/gift-exchanges/:id
    */
   updateGiftExchange = async (
     req: Request,
@@ -102,11 +100,11 @@ export class GiftExchangeController {
   ): Promise<void> => {
     try {
       const { id } = req.params;
-      const data: UpdateGiftExchangeRequest = req.body;
       const giftExchange = await this.giftExchangeService.updateGiftExchange(
         id,
-        data,
+        req.body,
       );
+
       ResponseHelper.success(
         res,
         giftExchange,
@@ -119,7 +117,7 @@ export class GiftExchangeController {
 
   /**
    * Delete gift exchange
-   * DELETE /api/gift-exchanges/:id
+   * DELETE /api/v1/gift-exchanges/:id
    */
   deleteGiftExchange = async (
     req: Request,
@@ -129,6 +127,7 @@ export class GiftExchangeController {
     try {
       const { id } = req.params;
       await this.giftExchangeService.deleteGiftExchange(id);
+
       ResponseHelper.success(res, null, "Gift exchange deleted successfully");
     } catch (error) {
       next(error);
@@ -137,7 +136,7 @@ export class GiftExchangeController {
 
   /**
    * Add participant to gift exchange
-   * POST /api/gift-exchanges/:id/participants
+   * POST /api/v1/gift-exchanges/:id/participants
    */
   addParticipantToExchange = async (
     req: Request,
@@ -146,13 +145,14 @@ export class GiftExchangeController {
   ): Promise<void> => {
     try {
       const { id } = req.params;
-      const data: AddParticipantToExchangeRequest = req.body;
-      await this.giftExchangeService.addParticipantToExchange(id, data);
-      ResponseHelper.created(
-        res,
-        null,
-        "Participant added to gift exchange successfully",
-      );
+      await this.giftExchangeService.addParticipantToExchange(id, req.body);
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Participant added to gift exchange successfully",
+      };
+
+      res.status(201).json(response);
     } catch (error) {
       next(error);
     }
@@ -160,7 +160,7 @@ export class GiftExchangeController {
 
   /**
    * Remove participant from gift exchange
-   * DELETE /api/gift-exchanges/:id/participants/:participantId
+   * DELETE /api/v1/gift-exchanges/:id/participants/:participantId
    */
   removeParticipantFromExchange = async (
     req: Request,
@@ -169,14 +169,14 @@ export class GiftExchangeController {
   ): Promise<void> => {
     try {
       const { id, participantId } = req.params;
-      const giftExchange =
-        await this.giftExchangeService.removeParticipantFromExchange(
-          id,
-          participantId,
-        );
+      await this.giftExchangeService.removeParticipantFromExchange(
+        id,
+        participantId,
+      );
+
       ResponseHelper.success(
         res,
-        giftExchange,
+        null,
         "Participant removed from gift exchange successfully",
       );
     } catch (error) {
@@ -185,8 +185,8 @@ export class GiftExchangeController {
   };
 
   /**
-   * Get participants for a gift exchange
-   * GET /api/gift-exchanges/:id/participants
+   * Get participants in gift exchange
+   * GET /api/v1/gift-exchanges/:id/participants
    */
   getExchangeParticipants = async (
     req: Request,
@@ -197,6 +197,7 @@ export class GiftExchangeController {
       const { id } = req.params;
       const participants =
         await this.giftExchangeService.getExchangeParticipants(id);
+
       ResponseHelper.success(res, participants);
     } catch (error) {
       next(error);

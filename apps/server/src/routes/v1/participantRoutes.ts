@@ -15,7 +15,7 @@ const participantController = new ParticipantController();
 router.get(
   "/",
   validate(getParticipantsQuerySchema),
-  participantController.getAllParticipants,
+  participantController.getParticipants,
 );
 
 // POST /api/v1/participants

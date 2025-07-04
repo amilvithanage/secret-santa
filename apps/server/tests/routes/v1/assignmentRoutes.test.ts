@@ -1,6 +1,7 @@
 import request from "supertest";
 import express from "express";
 import assignmentRoutes from "../../../src/routes/v1/assignmentRoutes";
+import giftExchangeRoutes from "../../../src/routes/v1/giftExchangeRoutes";
 import { GiftExchangeStatus } from "../../../src/generated/prisma";
 import DatabaseService from "../../../src/services/database";
 import errorHandler from "../../../src/middleware/errorHandler";
@@ -10,6 +11,7 @@ import { Prisma } from "../../../src/generated/prisma";
 const app = express();
 app.use(express.json());
 app.use("/api/v1/assignments", assignmentRoutes);
+app.use("/api/v1/gift-exchanges", giftExchangeRoutes);
 app.use(errorHandler); // Add error handler middleware
 
 // Mock successful database operations for integration tests
@@ -127,17 +129,17 @@ beforeEach(() => {
 });
 
 describe("Assignment Routes", () => {
-  describe("POST /api/v1/assignments/:id/assign", () => {
+  describe("POST /api/v1/gift-exchanges/:id/assignments", () => {
     it("should create assignments for a gift exchange", async () => {
       const response = await request(app)
-        .post("/api/v1/assignments/test-exchange-id/assign")
+        .post("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(201);
 
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.message).toBe(
-        "Secret Santa assignments created successfully",
+        "Secret Santa assignments generated successfully",
       );
     });
 
@@ -146,7 +148,7 @@ describe("Assignment Routes", () => {
       mockPrisma.giftExchange.findUnique.mockResolvedValueOnce(null);
 
       const response = await request(app)
-        .post("/api/v1/assignments/non-existent-id/assign")
+        .post("/api/v1/gift-exchanges/non-existent-id/assignments")
         .expect(404);
 
       expect(response.body.success).toBe(false);
@@ -172,7 +174,7 @@ describe("Assignment Routes", () => {
       });
 
       const response = await request(app)
-        .post("/api/v1/assignments/test-exchange-id/assign")
+        .post("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -209,7 +211,7 @@ describe("Assignment Routes", () => {
       });
 
       const response = await request(app)
-        .post("/api/v1/assignments/test-exchange-id/assign")
+        .post("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(400);
 
       expect(response.body.success).toBe(false);
@@ -274,10 +276,10 @@ describe("Assignment Routes", () => {
     });
   });
 
-  describe("GET /api/v1/assignments/:id/assignments", () => {
+  describe("GET /api/v1/gift-exchanges/:id/assignments", () => {
     it("should return assignments for a gift exchange", async () => {
       const response = await request(app)
-        .get("/api/v1/assignments/test-exchange-id/assignments")
+        .get("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -291,7 +293,7 @@ describe("Assignment Routes", () => {
       mockPrisma.assignment.findMany.mockResolvedValueOnce([]);
 
       const response = await request(app)
-        .get("/api/v1/assignments/test-exchange-id/assignments")
+        .get("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -300,16 +302,14 @@ describe("Assignment Routes", () => {
     });
   });
 
-  describe("DELETE /api/v1/assignments/:id/assignments", () => {
+  describe("DELETE /api/v1/gift-exchanges/:id/assignments", () => {
     it("should delete all assignments for a gift exchange", async () => {
       const response = await request(app)
-        .delete("/api/v1/assignments/test-exchange-id/assignments")
+        .delete("/api/v1/gift-exchanges/test-exchange-id/assignments")
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe(
-        "All assignments deleted successfully",
-      );
+      expect(response.body.message).toBe("Assignments reset successfully");
     });
 
     it("should return 404 when gift exchange not found", async () => {
@@ -319,7 +319,7 @@ describe("Assignment Routes", () => {
       );
 
       const response = await request(app)
-        .delete("/api/v1/assignments/non-existent-id/assignments")
+        .delete("/api/v1/gift-exchanges/non-existent-id/assignments")
         .expect(404);
 
       expect(response.body.success).toBe(false);

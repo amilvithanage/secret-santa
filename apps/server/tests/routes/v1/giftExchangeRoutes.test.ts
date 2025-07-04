@@ -1,10 +1,10 @@
 import request from "supertest";
 import express from "express";
 import {
-  CreateGiftExchangeRequest,
-  UpdateGiftExchangeRequest,
   AddParticipantToExchangeRequest,
+  CreateGiftExchangeRequest,
   GiftExchangeStatus,
+  UpdateGiftExchangeRequest,
 } from "@secret-santa/shared-types";
 import errorHandler from "../../../src/middleware/errorHandler";
 
@@ -17,6 +17,7 @@ const mockPrisma = {
     findFirst: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
   },
   participant: {
     findUnique: jest.fn(),
@@ -86,7 +87,7 @@ describe("Gift Exchange Routes", () => {
     mockPrisma.giftExchange.findMany.mockResolvedValue([mockGiftExchangeData]);
 
     // Mock findUnique to return data for existing exchanges and null for non-existent ones
-    mockPrisma.giftExchange.findUnique.mockImplementation((args: any) => {
+    mockPrisma.giftExchange.findUnique.mockImplementation((args) => {
       if (args.where.id === "test-id" || args.where.id === "test-exchange-id") {
         return Promise.resolve({
           id: args.where.id,
@@ -103,7 +104,7 @@ describe("Gift Exchange Routes", () => {
     });
 
     // Mock update method
-    mockPrisma.giftExchange.update.mockImplementation((args: any) => {
+    mockPrisma.giftExchange.update.mockImplementation((args) => {
       return Promise.resolve({
         id: args.where.id,
         name: args.data.name || "Christmas 2024",
@@ -240,7 +241,8 @@ describe("Gift Exchange Routes", () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(Array.isArray(response.body.data.data)).toBe(true);
+      expect(response.body.data.pagination).toBeDefined();
     });
   });
 
@@ -346,10 +348,6 @@ describe("Gift Exchange Routes", () => {
         .expect(201);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toBe(null);
-      expect(response.body.message).toBe(
-        "Participant added to gift exchange successfully",
-      );
       expect(response.body.message).toBe(
         "Participant added to gift exchange successfully",
       );
