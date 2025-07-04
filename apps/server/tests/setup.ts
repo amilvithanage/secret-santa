@@ -1,7 +1,7 @@
-import { PrismaClient } from '../src/generated/prisma';
+import { PrismaClient } from "../src/generated/prisma";
 
 // Mock Prisma Client for tests
-jest.mock('../src/generated/prisma', () => ({
+jest.mock("../src/generated/prisma", () => ({
   PrismaClient: jest.fn().mockImplementation(() => ({
     participant: {
       create: jest.fn(),
@@ -47,9 +47,22 @@ jest.mock('../src/generated/prisma', () => ({
       meta?: Record<string, unknown>;
       clientVersion: string;
       batchRequestIdx?: number;
-      constructor(message: string, { code, clientVersion, meta, batchRequestIdx }: { code: string; clientVersion: string; meta?: Record<string, unknown>; batchRequestIdx?: number }) {
+      constructor(
+        message: string,
+        {
+          code,
+          clientVersion,
+          meta,
+          batchRequestIdx,
+        }: {
+          code: string;
+          clientVersion: string;
+          meta?: Record<string, unknown>;
+          batchRequestIdx?: number;
+        },
+      ) {
         super(message);
-        this.name = 'PrismaClientKnownRequestError';
+        this.name = "PrismaClientKnownRequestError";
         this.code = code;
         this.clientVersion = clientVersion;
         this.meta = meta;

@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import { z, ZodSchema, ZodError } from 'zod';
-import { ValidationError } from '../utils/errors';
+import { Request, Response, NextFunction } from "express";
+import { z, ZodSchema, ZodError } from "zod";
+import { ValidationError } from "../utils/errors";
 
 // Validation middleware to check for validation errors using Zod
 export const validate = (schema: ZodSchema) => {
@@ -10,7 +10,7 @@ export const validate = (schema: ZodSchema) => {
       const validatedData = schema.parse({
         body: req.body,
         params: req.params,
-        query: req.query
+        query: req.query,
       });
 
       // Update request with validated data
@@ -24,7 +24,7 @@ export const validate = (schema: ZodSchema) => {
         } catch (error) {
           // In test environments, req.query might be read-only
           // In that case, copy properties individually
-          Object.keys(validatedData.query).forEach(key => {
+          Object.keys(validatedData.query).forEach((key) => {
             (req.query as any)[key] = (validatedData.query as any)[key];
           });
         }
@@ -35,17 +35,17 @@ export const validate = (schema: ZodSchema) => {
       if (error instanceof ZodError) {
         // Extract the first validation error message
         const firstError = error.errors[0];
-        const fieldName = firstError.path.join('.');
+        const fieldName = firstError.path.join(".");
         const message = firstError.message;
 
         // Format the message properly
         let detailedMessage: string;
-        if (message.toLowerCase().includes('is required')) {
+        if (message.toLowerCase().includes("is required")) {
           detailedMessage = message.toLowerCase();
-        } else if (message.toLowerCase().includes('required')) {
+        } else if (message.toLowerCase().includes("required")) {
           detailedMessage = `${fieldName} is required`;
-        } else if (message.toLowerCase().includes('invalid email format')) {
-          detailedMessage = 'email must be a valid email address';
+        } else if (message.toLowerCase().includes("invalid email format")) {
+          detailedMessage = "email must be a valid email address";
         } else {
           detailedMessage = `${fieldName} ${message.toLowerCase()}`;
         }

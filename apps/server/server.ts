@@ -58,7 +58,7 @@ app.use((req, _res, next) => {
 });
 
 // Error handler - must be last
-app.use(errorHandler)
+app.use(errorHandler);
 
 // Initialize database and start server
 const startServer = async () => {
@@ -81,8 +81,8 @@ const startServer = async () => {
       console.error("❌ Server error:", error);
     });
 
-    server.on('error', (error) => {
-      console.error('❌ Server error:', error);
+    server.on("error", (error) => {
+      console.error("❌ Server error:", error);
     });
 
     // Graceful shutdown
