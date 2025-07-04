@@ -137,7 +137,7 @@ describe("Assignment Routes", () => {
       expect(response.body.data).toBeDefined();
       expect(Array.isArray(response.body.data)).toBe(true);
       expect(response.body.message).toBe(
-        "Secret Santa assignments created successfully",
+        "Secret Santa assignments generated successfully",
       );
     });
 
@@ -307,9 +307,7 @@ describe("Assignment Routes", () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe(
-        "All assignments deleted successfully",
-      );
+      expect(response.body.message).toBe("Assignments reset successfully");
     });
 
     it("should return 404 when gift exchange not found", async () => {

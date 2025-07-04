@@ -20,15 +20,9 @@ router.get("/:id", assignmentController.getAssignmentById);
 router.post("/:id/assign", assignmentController.createAssignments);
 
 // GET /api/gift-exchanges/:id/assignments - Get assignments for exchange
-router.get(
-  "/:id/assignments",
-  assignmentController.getAssignmentsByGiftExchange,
-);
+router.get("/:id/assignments", assignmentController.getAssignmentsForExchange);
 
 // DELETE /api/gift-exchanges/:id/assignments - Delete all assignments for exchange
-router.delete(
-  "/:id/assignments",
-  assignmentController.deleteAssignmentsByGiftExchange,
-);
+router.delete("/:id/assignments", assignmentController.resetAssignments);
 
 export default router;

@@ -1,46 +1,17 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { AssignmentService } from "../services/AssignmentService";
-import { CreateAssignmentsRequest } from "@secret-santa/shared-types";
-import { ResponseHelper } from "../utils/ResponseHelper";
-import { InternalServerError, NotFoundError } from "../utils/errors";
+import { ApiResponse } from "@secret-santa/shared-types";
 
-/**
- * Assignment Controller - HTTP request/response handling for assignments
- * Handles API endpoints and delegates business logic to AssignmentService
- */
 export class AssignmentController {
-  private assignmentService = new AssignmentService();
+  private assignmentService: AssignmentService;
 
-  /**
-   * Create Secret Santa assignments for a gift exchange
-   * POST /api/gift-exchanges/:id/assign
-   */
-  createAssignments = async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
-    try {
-      const { id } = req.params;
-      const data: CreateAssignmentsRequest = { giftExchangeId: id };
-      const result = await this.assignmentService.createAssignments(data);
-      if (result.success) {
-        ResponseHelper.created(
-          res,
-          result.assignments,
-          "Secret Santa assignments created successfully",
-        );
-      } else {
-        throw new InternalServerError("Assignments not created");
-      }
-    } catch (error) {
-      next(error);
-    }
-  };
+  constructor() {
+    this.assignmentService = new AssignmentService();
+  }
 
   /**
    * Get all assignments
-   * GET /api/assignments
+   * GET /api/v1/assignments
    */
   getAllAssignments = async (
     req: Request,
@@ -49,7 +20,13 @@ export class AssignmentController {
   ): Promise<void> => {
     try {
       const assignments = await this.assignmentService.getAllAssignments();
-      ResponseHelper.success(res, assignments);
+
+      const response: ApiResponse = {
+        success: true,
+        data: assignments,
+      };
+
+      res.json(response);
     } catch (error) {
       next(error);
     }
@@ -57,7 +34,7 @@ export class AssignmentController {
 
   /**
    * Get assignment by ID
-   * GET /api/assignments/:id
+   * GET /api/v1/assignments/:id
    */
   getAssignmentById = async (
     req: Request,
@@ -67,8 +44,55 @@ export class AssignmentController {
     try {
       const { id } = req.params;
       const assignment = await this.assignmentService.getAssignmentById(id);
-      if (!assignment) throw new NotFoundError("Assignment not found");
-      ResponseHelper.success(res, assignment);
+
+      if (!assignment) {
+        const response: ApiResponse = {
+          success: false,
+          error: "Assignment not found",
+        };
+        res.status(404).json(response);
+        return;
+      }
+
+      const response: ApiResponse = {
+        success: true,
+        data: assignment,
+      };
+
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+  /**
+   * Generate assignments for a gift exchange
+   * POST /api/v1/gift-exchanges/:giftExchangeId/assignments
+   */
+  createAssignments = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { giftExchangeId } = req.params;
+      const result = await this.assignmentService.createAssignments({
+        giftExchangeId,
+      });
+
+      if (result.success) {
+        const response: ApiResponse = {
+          success: true,
+          data: result.assignments,
+          message: "Secret Santa assignments generated successfully",
+        };
+        res.status(201).json(response);
+      } else {
+        const response: ApiResponse = {
+          success: false,
+          error: result.error,
+        };
+        res.status(422).json(response);
+      }
     } catch (error) {
       next(error);
     }
@@ -76,36 +100,80 @@ export class AssignmentController {
 
   /**
    * Get assignments for a gift exchange
-   * GET /api/gift-exchanges/:id/assignments
+   * GET /api/v1/gift-exchanges/:giftExchangeId/assignments
    */
-  getAssignmentsByGiftExchange = async (
+  getAssignmentsForExchange = async (
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
+      const { giftExchangeId } = req.params;
       const assignments =
-        await this.assignmentService.getAssignmentsByGiftExchange(id);
-      ResponseHelper.success(res, assignments);
+        await this.assignmentService.getAssignmentsByGiftExchange(
+          giftExchangeId,
+        );
+
+      const response: ApiResponse = {
+        success: true,
+        data: assignments,
+      };
+
+      res.json(response);
     } catch (error) {
       next(error);
     }
   };
 
   /**
-   * Delete all assignments for a gift exchange
-   * DELETE /api/gift-exchanges/:id/assignments
+   * Get assignment for a specific participant
+   * GET /api/v1/gift-exchanges/:giftExchangeId/assignments/:participantId
    */
-  deleteAssignmentsByGiftExchange = async (
+  getAssignmentForParticipant = async (
     req: Request,
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { id } = req.params;
-      await this.assignmentService.deleteAssignmentsByGiftExchange(id);
-      ResponseHelper.success(res, null, "All assignments deleted successfully");
+      const { giftExchangeId, participantId } = req.params;
+      const assignment =
+        await this.assignmentService.getAssignmentForParticipant(
+          giftExchangeId,
+          participantId,
+        );
+
+      const response: ApiResponse = {
+        success: true,
+        data: assignment,
+      };
+
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Reset assignments for a gift exchange
+   * DELETE /api/v1/gift-exchanges/:giftExchangeId/assignments
+   */
+  resetAssignments = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { giftExchangeId } = req.params;
+      await this.assignmentService.deleteAssignmentsByGiftExchange(
+        giftExchangeId,
+      );
+
+      const response: ApiResponse = {
+        success: true,
+        message: "Assignments reset successfully",
+      };
+
+      res.json(response);
     } catch (error) {
       next(error);
     }

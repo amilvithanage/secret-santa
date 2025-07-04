@@ -1,22 +1,16 @@
+import { NotFoundError, ConflictError, ValidationError } from "../utils/errors";
 import {
   CreateGiftExchangeRequest,
   UpdateGiftExchangeRequest,
   GiftExchangeResponse,
-  AddParticipantToExchangeRequest,
+  PaginatedResponse,
   GiftExchangeStatus,
+  AddParticipantToExchangeRequest,
 } from "@secret-santa/shared-types";
 import DatabaseService from "./database";
-import { ConflictError, NotFoundError, ValidationError } from "../utils/errors";
-import { ParticipantService } from "./ParticipantService";
 
-/**
- * Gift Exchange Service - Business logic for gift exchange management
- * Handles CRUD operations for gift exchanges with proper error handling
- */
 export class GiftExchangeService {
   private db = DatabaseService.getInstance().prisma;
-  private participantService = new ParticipantService();
-
   /**
    * Create a new gift exchange
    */
@@ -44,22 +38,9 @@ export class GiftExchangeService {
           year: data.year,
           status: GiftExchangeStatus.DRAFT,
         },
-        include: {
-          participants: {
-            include: {
-              participant: true,
-            },
-          },
-          assignments: {
-            include: {
-              giver: true,
-              receiver: true,
-            },
-          },
-        },
       });
 
-      return this.mapToResponse(giftExchange);
+      return this.mapToGiftExchangeResponse(giftExchange);
     } catch (error: any) {
       if (error.code === "P2002") {
         throw new ConflictError(
@@ -76,59 +57,90 @@ export class GiftExchangeService {
   async getGiftExchanges(
     page: number = 1,
     limit: number = 10,
-  ): Promise<GiftExchangeResponse[]> {
+    includeParticipants: boolean = false,
+  ): Promise<PaginatedResponse<GiftExchangeResponse>> {
     const skip = (page - 1) * limit;
 
-    const giftExchanges = await this.db.giftExchange.findMany({
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-      include: {
-        participants: {
-          include: {
-            participant: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                createdAt: true,
-                updatedAt: true,
-              },
-            },
-          },
+    const [giftExchanges, total] = await Promise.all([
+      this.db.giftExchange.findMany({
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: limit,
+        include: {
+          participants: includeParticipants
+            ? {
+                include: {
+                  participant: {
+                    select: {
+                      id: true,
+                      name: true,
+                      email: true,
+                      createdAt: true,
+                      updatedAt: true,
+                    },
+                  },
+                },
+              }
+            : false,
         },
-        assignments: {
-          include: {
-            giver: true,
-            receiver: true,
-          },
-        },
-      },
-    });
+      }),
+      this.db.giftExchange.count(),
+    ]);
 
-    return giftExchanges.map((exchange: any) => this.mapToResponse(exchange));
+    const mappedExchanges = giftExchanges.map((ex: any) =>
+      this.mapToGiftExchangeResponse(ex),
+    );
+
+    return {
+      success: true,
+      data: mappedExchanges,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   /**
    * Get gift exchange by ID
    */
-  async getGiftExchangeById(id: string): Promise<GiftExchangeResponse> {
+  async getGiftExchangeById(
+    id: string,
+    includeParticipants: boolean = false,
+    includeAssignments: boolean = false,
+  ): Promise<GiftExchangeResponse> {
     const giftExchange = await this.db.giftExchange.findUnique({
       where: { id },
       include: {
-        participants: {
-          include: {
-            participant: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                createdAt: true,
-                updatedAt: true,
+        participants: includeParticipants
+          ? {
+              include: {
+                participant: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
               },
-            },
-          },
-        },
+            }
+          : false,
+        assignments: includeAssignments
+          ? {
+              include: {
+                giver: {
+                  select: { id: true, name: true, email: true },
+                },
+                receiver: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+            }
+          : false,
       },
     });
 
@@ -136,7 +148,7 @@ export class GiftExchangeService {
       throw new NotFoundError("Gift exchange not found");
     }
 
-    return this.mapToResponse(giftExchange);
+    return this.mapToGiftExchangeResponse(giftExchange);
   }
 
   /**
@@ -180,7 +192,7 @@ export class GiftExchangeService {
         data,
       });
 
-      return this.mapToResponse(giftExchange);
+      return this.mapToGiftExchangeResponse(giftExchange);
     } catch (error: any) {
       if (error.code === "P2002") {
         throw new ConflictError(
@@ -200,8 +212,8 @@ export class GiftExchangeService {
 
     // Prevent deletion if assignments have been made
     if (
-      giftExchange.status === GiftExchangeStatus.ASSIGNED ||
-      giftExchange.status === GiftExchangeStatus.COMPLETED
+      giftExchange.status === "ASSIGNED" ||
+      giftExchange.status === "COMPLETED"
     ) {
       throw new ValidationError(
         "Cannot delete gift exchange with assignments. Please reset assignments first.",
@@ -224,7 +236,13 @@ export class GiftExchangeService {
     const giftExchange = await this.getGiftExchangeById(giftExchangeId);
 
     // Validate participant exists
-    await this.participantService.getParticipantById(data.participantId);
+    const participant = await this.db.participant.findUnique({
+      where: { id: data.participantId },
+    });
+
+    if (!participant) {
+      throw new NotFoundError("Participant not found");
+    }
 
     // Check if participant is already in the exchange
     const existingParticipant = await this.db.giftExchangeParticipant.findFirst(
@@ -244,8 +262,8 @@ export class GiftExchangeService {
 
     // Prevent adding participants if assignments have been made
     if (
-      giftExchange.status === GiftExchangeStatus.ASSIGNED ||
-      giftExchange.status === GiftExchangeStatus.COMPLETED
+      giftExchange.status === "ASSIGNED" ||
+      giftExchange.status === "COMPLETED"
     ) {
       throw new ValidationError(
         "Cannot add participants to gift exchange with assignments",
@@ -260,7 +278,7 @@ export class GiftExchangeService {
     });
 
     // Update status to PARTICIPANTS_ADDED if it was DRAFT
-    if (giftExchange.status === GiftExchangeStatus.DRAFT) {
+    if (giftExchange.status === "DRAFT") {
       await this.updateGiftExchange(giftExchangeId, {
         status: GiftExchangeStatus.PARTICIPANTS_ADDED,
       });
@@ -273,14 +291,14 @@ export class GiftExchangeService {
   async removeParticipantFromExchange(
     giftExchangeId: string,
     participantId: string,
-  ): Promise<GiftExchangeResponse> {
+  ): Promise<void> {
     // Validate gift exchange exists
     const giftExchange = await this.getGiftExchangeById(giftExchangeId);
 
     // Prevent removing participants if assignments have been made
     if (
-      giftExchange.status === GiftExchangeStatus.ASSIGNED ||
-      giftExchange.status === GiftExchangeStatus.COMPLETED
+      giftExchange.status === "ASSIGNED" ||
+      giftExchange.status === "COMPLETED"
     ) {
       throw new ValidationError(
         "Cannot remove participants from gift exchange with assignments",
@@ -304,8 +322,6 @@ export class GiftExchangeService {
     await this.db.giftExchangeParticipant.delete({
       where: { id: existingParticipant.id },
     });
-
-    return this.getGiftExchangeById(giftExchangeId);
   }
 
   /**
@@ -318,12 +334,22 @@ export class GiftExchangeService {
       where: { giftExchangeId },
       include: {
         participant: {
-          select: { id: true, name: true, email: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         },
       },
     });
 
-    return participants.map((p: any) => p.participant);
+    return participants.map((p: any) => ({
+      ...p.participant,
+      createdAt: p.participant.createdAt.toISOString(),
+      updatedAt: p.participant.updatedAt.toISOString(),
+    }));
   }
 
   /**
@@ -373,10 +399,7 @@ export class GiftExchangeService {
     }
   }
 
-  /**
-   * Map Prisma gift exchange to API response format
-   */
-  private mapToResponse(giftExchange: any): GiftExchangeResponse {
+  private mapToGiftExchangeResponse(giftExchange: any): GiftExchangeResponse {
     return {
       id: giftExchange.id,
       name: giftExchange.name,
@@ -384,30 +407,20 @@ export class GiftExchangeService {
       status: giftExchange.status,
       createdAt: giftExchange.createdAt.toISOString(),
       updatedAt: giftExchange.updatedAt.toISOString(),
-      participants:
-        giftExchange.participants?.map((ep: any) => ({
-          id: ep.participant.id,
-          name: ep.participant.name,
-          email: ep.participant.email,
-          createdAt: ep.participant.createdAt.toISOString(),
-          updatedAt: ep.participant.updatedAt.toISOString(),
-        })) || [],
-      assignments:
-        giftExchange.assignments?.map((assignment: any) => ({
-          id: assignment.id,
-          giftExchangeId: assignment.giftExchangeId,
-          giver: {
-            id: assignment.giver.id,
-            name: assignment.giver.name,
-            email: assignment.giver.email,
-          },
-          receiver: {
-            id: assignment.receiver.id,
-            name: assignment.receiver.name,
-            email: assignment.receiver.email,
-          },
-          createdAt: assignment.createdAt.toISOString(),
-        })) || [],
+      participants: giftExchange.participants?.map((p: any) => ({
+        id: p.participant.id,
+        name: p.participant.name,
+        email: p.participant.email,
+        createdAt: p.participant.createdAt.toISOString(),
+        updatedAt: p.participant.updatedAt.toISOString(),
+      })),
+      assignments: giftExchange.assignments?.map((a: any) => ({
+        id: a.id,
+        giftExchangeId: a.giftExchangeId,
+        giver: a.giver,
+        receiver: a.receiver,
+        createdAt: a.createdAt.toISOString(),
+      })),
     };
   }
 }

@@ -66,6 +66,17 @@ export const getGiftExchangesQuerySchema = z.object({
       .string()
       .optional()
       .transform((val) => val === "true"),
+    includeAssignments: z
+      .string()
+      .optional()
+      .transform((val) => val === "true"),
+  }),
+});
+
+export const assignmentParamsSchema = z.object({
+  params: z.object({
+    giftExchangeId: z.string().min(1, "Gift exchange ID is required"),
+    participantId: z.string().min(1, "Participant ID is required").optional(),
   }),
 });
 
