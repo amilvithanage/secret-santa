@@ -1,25 +1,38 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
-# Update system packages to reduce vulnerabilities
-RUN apk update && apk upgrade && apk add --no-cache bash
+# Update system packages and install required tools
+RUN apk update && apk upgrade && apk add --no-cache bash curl dumb-init wget
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
-COPY apps/server/package*.json ./
+# Copy root package.json for workspace setup
+COPY package.json ./
 
-# Install dependencies
+# Copy server package.json
+COPY apps/server/package*.json ./apps/server/
+
+# Copy shared types package
+COPY packages/shared-types/ ./packages/shared-types/
+
+# Install dependencies for the workspace
 RUN npm install
 
-# Copy the rest of the application code (including tsconfig, src, etc.)
-COPY apps/server/ ./
+# Copy the server application code
+COPY apps/server/ ./apps/server/
 
-# Build TypeScript
-RUN npm run build
+# Change to server directory and generate Prisma client
+WORKDIR /usr/src/app/apps/server
+RUN npm run db:generate
+
+# Change ownership of the app directory to node user
+RUN chown -R node:node /usr/src/app
+
+# Switch to non-root user
+USER node
 
 # Expose the application port
 EXPOSE 3000
 
-# Command to run the application
-CMD ["npm", "start"]
+# Command to run the application in development mode (no build needed)
+CMD ["npm", "run", "dev"]

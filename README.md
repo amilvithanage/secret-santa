@@ -1,6 +1,56 @@
 # 🎁 Secret Santa
 
-A modern, full-stack Secret Santa application built with React, Node.js, and PostgreSQL. This application allows users to create and manage Secret Santa events, invite participants, and automatically assign gift recipients while maintaining the surprise element.
+A modern, full-stack Secret Santa application built with React, Node.js, and PostgreSQL. Create and manage Secret Santa events, invite participants, and automatically assign gift recipients while maintaining the surprise element.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **Docker & Docker Compose**
+- **Make** (usually pre-installed on macOS/Linux)
+
+### 🏃‍♂️ Get Up and Running (4 commands)
+
+```bash
+git clone <repository-url>
+cd secret-santa
+cp .env.example .env    # Setup environment
+make start
+```
+
+That's it! 🎉
+
+> **💡 Note:** The default `.env` settings work out of the box. For custom configuration, see [ENV_SETUP.md](ENV_SETUP.md)
+
+**Access your application:**
+
+- **Frontend:** <http://localhost:5173>
+- **API:** <http://localhost:3000>
+
+### 🛑 Stop the application
+
+```bash
+make stop
+```
+
+---
+
+## 🔧 Available Commands
+
+Run `make help` to see all available commands:
+
+```bash
+make help          # Show all available commands
+make start         # Start the application
+make stop          # Stop the application
+make restart       # Restart the application
+make logs          # View logs
+make health        # Check service health
+make test          # Run tests
+make clean         # Clean up containers
+```
+
+---
 
 ## 📌 Features
 
@@ -13,98 +63,35 @@ A modern, full-stack Secret Santa application built with React, Node.js, and Pos
 
 ## 🏗️ Tech Stack
 
-### Frontend
+**Frontend:** React 18 + TypeScript + Vite + Tailwind CSS
 
-- **React 18** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for styling
+**Backend:** Node.js + Express + TypeScript + Prisma
 
-### Backend
+**Database:** PostgreSQL
 
-- **Node.js** with TypeScript
-- **Express.js** for API framework
-- **PostgreSQL** for database
-- **Prisma** for database ORM
-- **JWT** for authentication
+**DevOps:** Docker + Docker Compose
 
-### Development
+---
 
-- **TypeScript** for type safety
-- **ESLint** and **Prettier** for code quality
-- **Jest** for testing
-- **Docker** for containerization
+## 📚 Need Help?
 
-## 🚀 Getting Started
+- **Environment Setup:** See [ENV_SETUP.md](ENV_SETUP.md)
+- **Troubleshooting:** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- **Development Guide:** See [DEVELOPMENT.md](DEVELOPMENT.md)
+- **API Documentation:** See [API.md](API.md)
 
-### Prerequisites
+## 🤝 Contributing
 
-- Node.js (v18+)
-- PostgreSQL (v14+)
-- Docker & Docker Compose
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-### 🧰 Installation
+## 📄 License
 
-1. Clone the repository:
+MIT License - see [LICENSE](LICENSE) file for details.
 
-```bash
-# TODO: Add repository-url
-git clone <repository-url>
-cd secret-santa
-```
+---
 
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Set up environment variables:
-
-- Copy `.env.example` to `.env` and fill in the required values.
-
-### 💻 Running the Application
-
-To run the application locally, use Docker Compose:
-
-```
-docker-compose up
-```
-
-This command will build and start both the frontend and backend services.
-
-### 🧪 Running Tests
-
-To run tests for the frontend and backend:
-
-- For the client:
-
-  ```
-  npm test:client
-  ```
-
-- For the server:
-
-  ```
-  npm test:server
-  ```
-
-## 📁 Project Structure
-
-The project is organized into several key directories:
-
-```
-secret-santa/
-├── apps/
-│   ├── client/      # React frontend (Vite + Tailwind)
-│   └── server/      # Node.js backend (Express + Prisma)
-│
-├── packages/        # Shared code/libraries (e.g., TypeScript types)
-├── .github/         # CI/CD workflows (GitHub Actions)
-├── docker-compose.yml
-├── .env.example
-├── README.md
-```
-
-## ⚙️ CI/CD
-
-The project includes a CI/CD pipeline defined in `.github/workflows/main.yml`, which automates the build, test, and deployment processes.
+**Happy Secret Santa! 🎅🎁**

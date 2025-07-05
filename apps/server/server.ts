@@ -6,11 +6,12 @@ import dotenv from "dotenv";
 import routes from "./src/routes/index";
 import DatabaseService from "./src/services/database";
 import { NotFoundError } from "./src/utils/errors";
-import { ResponseHelper } from "./src/utils/ResponseHelper";
 import errorHandler from "./src/middleware/errorHandler";
 
 // Load environment variables
-dotenv.config();
+// Try to load from root directory first (for local development)
+// If that fails, load from current directory (for Docker)
+dotenv.config({ path: "../../.env" });
 
 const app = express();
 const PORT = process.env["PORT"] || 3000;
@@ -25,40 +26,9 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Mount routes
 app.use("/api", routes);
 
-// Health check endpoint
-app.get("/api/health", async (_req, res) => {
-  try {
-    const dbHealth = await DatabaseService.getInstance().healthCheck();
-
-    if (dbHealth) {
-      ResponseHelper.success(res, {
-        status: "ok",
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        environment: process.env["NODE_ENV"] || "development",
-        database: "connected",
-      });
-    }
-  } catch (error) {
-    ResponseHelper.error(
-      res,
-      "Health check failed",
-      503,
-      "Service temporarily unavailable",
-    );
-  }
-});
-
 // Error handling middleware
 app.use(errorHandler);
 
-// 404 handler
-app.use((req, _res, next) => {
-  next(new NotFoundError(`Route ${req.originalUrl} not found`));
-});
-
-// Error handler - must be last
-app.use(errorHandler);
 
 // Initialize database and start server
 const startServer = async () => {

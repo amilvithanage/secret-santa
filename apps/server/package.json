@@ -7,10 +7,14 @@
     "dev": "nodemon --exec ts-node server.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
-    "db:studio": "prisma studio"
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "db:generate": "prisma generate --schema=./src/prisma/schema.prisma",
+    "db:migrate": "prisma migrate dev --schema=./src/prisma/schema.prisma",
+    "db:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=./src/prisma/schema.prisma",
+    "db:test:setup": "NODE_ENV=test prisma migrate deploy --schema=./src/prisma/schema.prisma",
+    "db:test:reset": "NODE_ENV=test prisma migrate reset --force --schema=./src/prisma/schema.prisma"
   },
   "prisma": {
     "schema": "src/prisma/schema.prisma"
