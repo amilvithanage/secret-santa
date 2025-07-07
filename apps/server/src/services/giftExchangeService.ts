@@ -9,6 +9,17 @@ import {
 } from "@secret-santa/shared-types";
 import DatabaseService from "./database";
 
+// Service response type without the success wrapper
+interface ServicePaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export class GiftExchangeService {
   private db = DatabaseService.getInstance().prisma;
   /**
@@ -58,7 +69,7 @@ export class GiftExchangeService {
     page: number = 1,
     limit: number = 10,
     includeParticipants: boolean = false,
-  ): Promise<PaginatedResponse<GiftExchangeResponse>> {
+  ): Promise<ServicePaginatedResponse<GiftExchangeResponse>> {
     const skip = (page - 1) * limit;
 
     const [giftExchanges, total] = await Promise.all([
@@ -92,7 +103,6 @@ export class GiftExchangeService {
     );
 
     return {
-      success: true,
       data: mappedExchanges,
       pagination: {
         page,

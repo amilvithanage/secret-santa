@@ -14,7 +14,7 @@ export function ParticipantManager() {
 
   useEffect(() => {
     loadParticipants();
-  }, [loadParticipants]);
+  }, []); // Load participants only once when component mounts
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

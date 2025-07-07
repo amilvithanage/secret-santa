@@ -11,6 +11,7 @@
     "test:ci": "jest --ci --coverage --watchAll=false",
     "db:generate": "prisma generate --schema=./src/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema=./src/prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=./src/prisma/schema.prisma",
     "db:reset": "prisma migrate reset --schema=./src/prisma/schema.prisma",
     "db:studio": "prisma studio --schema=./src/prisma/schema.prisma",
     "db:test:setup": "NODE_ENV=test prisma migrate deploy --schema=./src/prisma/schema.prisma",

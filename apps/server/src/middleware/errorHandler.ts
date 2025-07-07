@@ -57,7 +57,7 @@ const errorHandler = (
 
   // Default to 500 Internal Server Error
   const message =
-    process.env["NODE_ENV"] === "development"
+    process.env["NODE_ENV"] === "development" || process.env["NODE_ENV"] === "test"
       ? err.message
       : "Internal server error";
 

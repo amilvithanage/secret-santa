@@ -435,7 +435,7 @@ describe("Exclusion Rules Routes", () => {
         .expect(500);
 
       expect(response.body.success).toBe(false);
-      expect(response.body.error).toContain("Internal server error");
+      expect(response.body.error).toContain("Database connection failed");
     });
 
     it("should handle validation errors for invalid JSON", async () => {

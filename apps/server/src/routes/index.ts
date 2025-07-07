@@ -21,6 +21,13 @@ router.get("/health", async (_req, res) => {
         environment: process.env["NODE_ENV"] || "development",
         database: "connected",
       });
+    } else {
+      ResponseHelper.error(
+        res,
+        "Database connection failed",
+        503,
+        "Service temporarily unavailable",
+      );
     }
   } catch (error) {
     ResponseHelper.error(

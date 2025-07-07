@@ -132,7 +132,7 @@ describe("ParticipantService", () => {
         take: 2,
       });
       expect(mockDbInstance.prisma.participant.count).toHaveBeenCalled();
-      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
       expect(result.data).toHaveLength(2);
       expect(result.pagination).toMatchObject({
         page: 1,

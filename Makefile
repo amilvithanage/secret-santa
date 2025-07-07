@@ -63,10 +63,10 @@ health: ## Check health of all services
 
 # Database operations
 db-migrate: ## Run database migrations
-	docker compose exec server npm run db:migrate
+	docker compose exec -T server npm run db:migrate
 
 db-reset: ## Reset database
-	docker compose exec server npm run db:reset
+	docker compose exec -T server npm run db:reset
 
 db-studio: ## Open Prisma Studio
 	docker compose exec server npm run db:studio

@@ -33,14 +33,6 @@ class ApiService {
       const response = await fetch(url, config);
       const data = await response.json();
 
-      // Handle the double nesting issue we found in testing
-      if (data.data && data.data.data) {
-        return {
-          ...data,
-          data: data.data.data,
-        };
-      }
-
       return data;
     } catch (error) {
       console.error("API request failed:", error);
@@ -104,13 +96,9 @@ class ApiService {
   }
 
   async getExchangeParticipants(
-    _exchangeId: string,
+    exchangeId: string,
   ): Promise<ApiResponse<Participant[]>> {
-    // This endpoint might not exist on the server yet, so return empty for now
-    return {
-      success: true,
-      data: [],
-    };
+    return this.request(`/gift-exchanges/${exchangeId}/participants`);
   }
 
   // Exclusion Rules API

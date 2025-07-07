@@ -10,7 +10,7 @@ export const createGiftExchangeSchema = z.object({
       .number()
       .int()
       .min(2020, "Year must be 2020 or later")
-      .max(2030, "Year must be 2030 or earlier"),
+      .max(new Date().getFullYear() + 5, `Year must be ${new Date().getFullYear() + 5} or earlier`),
   }),
 });
 
@@ -25,7 +25,7 @@ export const updateGiftExchangeSchema = z.object({
       .number()
       .int()
       .min(2020, "Year must be 2020 or later")
-      .max(2030, "Year must be 2030 or earlier")
+      .max(new Date().getFullYear() + 5, `Year must be ${new Date().getFullYear() + 5} or earlier`)
       .optional(),
     status: z
       .enum(["DRAFT", "PARTICIPANTS_ADDED", "ASSIGNED", "COMPLETED"])

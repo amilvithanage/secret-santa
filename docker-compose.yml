@@ -24,6 +24,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
+      pull: true
     container_name: secret-santa-server
     environment:
       NODE_ENV: ${NODE_ENV:-development}
@@ -53,6 +54,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.client
+      pull: true
     container_name: secret-santa-client
     restart: unless-stopped
     ports:

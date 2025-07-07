@@ -11,7 +11,6 @@ import errorHandler from "./src/middleware/errorHandler";
 // Load environment variables
 // Try to load from root directory first (for local development)
 // If that fails, load from current directory (for Docker)
-dotenv.config({ path: "../../.env" });
 
 const app = express();
 const PORT = process.env["PORT"] || 3000;
@@ -45,10 +44,6 @@ const startServer = async () => {
       console.log(
         `🌍 Environment: ${process.env["NODE_ENV"] || "development"}`,
       );
-    });
-
-    server.on("error", (error) => {
-      console.error("❌ Server error:", error);
     });
 
     server.on("error", (error) => {

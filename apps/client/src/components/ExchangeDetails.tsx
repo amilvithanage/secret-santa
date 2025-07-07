@@ -40,13 +40,22 @@ export function ExchangeDetails({ exchange }: ExchangeDetailsProps) {
     reason: "",
   });
   const [validationResult, setValidationResult] = useState<any>(null);
+  const [exclusionError, setExclusionError] = useState<string | null>(null);
+  const [isCreatingExclusion, setIsCreatingExclusion] = useState(false);
 
   useEffect(() => {
     loadParticipants();
-  }, [loadParticipants]);
+  }, []); // Load participants only once when component mounts
 
   const availableParticipants = (allParticipants || []).filter(
     (p) => !(exchangeParticipants || []).some((ep) => ep.id === p.id),
+  );
+
+  // Check if the current exclusion form would create a duplicate
+  const isDuplicateExclusion = (exclusionRules || []).some(
+    (rule) =>
+      rule.excluder.id === exclusionForm.excluderId &&
+      rule.excluded.id === exclusionForm.excludedId,
   );
 
   const handleAddParticipant = async () => {
@@ -59,9 +68,20 @@ export function ExchangeDetails({ exchange }: ExchangeDetailsProps) {
 
   const handleCreateExclusion = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createExclusionRule(exclusionForm);
-    setExclusionForm({ excluderId: "", excludedId: "", reason: "" });
-    setShowAddExclusion(false);
+    setIsCreatingExclusion(true);
+    setExclusionError(null);
+
+    try {
+      const result = await createExclusionRule(exclusionForm);
+      if (result) {
+        setExclusionForm({ excluderId: "", excludedId: "", reason: "" });
+        setShowAddExclusion(false);
+      }
+    } catch (error: any) {
+      setExclusionError(error.message || "Failed to create exclusion rule");
+    } finally {
+      setIsCreatingExclusion(false);
+    }
   };
 
   const handleValidateExclusions = async () => {
@@ -337,19 +357,44 @@ export function ExchangeDetails({ exchange }: ExchangeDetailsProps) {
                       placeholder="e.g., They are siblings, roommates, etc."
                     />
                   </div>
+
+                  {/* Error Display */}
+                  {exclusionError && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                      <p className="text-sm text-red-700">{exclusionError}</p>
+                    </div>
+                  )}
+
+                  {/* Duplicate Warning */}
+                  {isDuplicateExclusion && exclusionForm.excluderId && exclusionForm.excludedId && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+                      <p className="text-sm text-yellow-700">
+                        ⚠️ This exclusion rule already exists
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex justify-end space-x-2">
                     <button
                       type="button"
-                      onClick={() => setShowAddExclusion(false)}
+                      onClick={() => {
+                        setShowAddExclusion(false);
+                        setExclusionError(null);
+                      }}
                       className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      disabled={isCreatingExclusion || isDuplicateExclusion || !exclusionForm.excluderId || !exclusionForm.excludedId}
+                      className={`px-4 py-2 rounded-md ${
+                        isCreatingExclusion || isDuplicateExclusion || !exclusionForm.excluderId || !exclusionForm.excludedId
+                          ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                          : 'bg-red-600 text-white hover:bg-red-700'
+                      }`}
                     >
-                      Add Exclusion
+                      {isCreatingExclusion ? 'Adding...' : 'Add Exclusion'}
                     </button>
                   </div>
                 </form>

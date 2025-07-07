@@ -26,7 +26,7 @@ export function GiftExchangeManager({
 
   useEffect(() => {
     loadGiftExchanges();
-  }, [loadGiftExchanges]);
+  }, []); // Load gift exchanges only once when component mounts
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

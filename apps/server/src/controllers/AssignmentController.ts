@@ -108,7 +108,7 @@ export class AssignmentController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { giftExchangeId } = req.params;
+      const { id: giftExchangeId } = req.params;
       const assignments =
         await this.assignmentService.getAssignmentsByGiftExchange(
           giftExchangeId,
@@ -163,7 +163,7 @@ export class AssignmentController {
     next: NextFunction,
   ): Promise<void> => {
     try {
-      const { giftExchangeId } = req.params;
+      const { id: giftExchangeId } = req.params;
       await this.assignmentService.deleteAssignmentsByGiftExchange(
         giftExchangeId,
       );

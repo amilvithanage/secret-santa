@@ -134,7 +134,7 @@ describe("GiftExchangeService", () => {
 
       const result = await giftExchangeService.getGiftExchanges(1, 10);
 
-      expect(result.success).toBe(true);
+      expect(result.data).toBeDefined();
       expect(result.data).toHaveLength(2);
       expect(result.pagination).toMatchObject({
         page: 1,

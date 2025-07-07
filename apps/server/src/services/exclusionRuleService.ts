@@ -11,6 +11,17 @@ import {
 import { GiftExchangeService } from "./giftExchangeService";
 import DatabaseService from "./database";
 
+// Service response type without the success wrapper
+interface ServicePaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export class ExclusionRuleService {
   private db = DatabaseService.getInstance().prisma;
   private giftExchangeService: GiftExchangeService;
@@ -80,10 +91,14 @@ export class ExclusionRuleService {
   async getExclusionRulesForExchange(
     giftExchangeId: string,
     query: GetExclusionsQuery,
-  ): Promise<PaginatedResponse<ExclusionRuleResponse>> {
+  ): Promise<ServicePaginatedResponse<ExclusionRuleResponse>> {
     await this.giftExchangeService.getGiftExchangeById(giftExchangeId);
 
-    const { page, limit, sortBy, sortOrder } = query;
+    // Ensure defaults are applied
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    const sortBy = query.sortBy || "createdAt";
+    const sortOrder = query.sortOrder || "desc";
     const skip = (page - 1) * limit;
 
     const [exclusionRules, total] = await Promise.all([
@@ -111,7 +126,6 @@ export class ExclusionRuleService {
     );
 
     return {
-      success: true,
       data: mappedRules,
       pagination: {
         page,

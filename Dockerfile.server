@@ -1,7 +1,7 @@
 FROM node:20-alpine
 
 # Update system packages and install required tools
-RUN apk update && apk upgrade && apk add --no-cache bash curl dumb-init wget
+RUN apk update && apk upgrade && apk add --no-cache bash curl dumb-init wget postgresql-client
 
 # Set the working directory
 WORKDIR /usr/src/app
@@ -18,12 +18,17 @@ COPY packages/shared-types/ ./packages/shared-types/
 # Install dependencies for the workspace
 RUN npm install
 
+# Build shared-types package first
+WORKDIR /usr/src/app/packages/shared-types
+RUN npm run build
+
 # Copy the server application code
+WORKDIR /usr/src/app
 COPY apps/server/ ./apps/server/
 
-# Change to server directory and generate Prisma client
-WORKDIR /usr/src/app/apps/server
-RUN npm run db:generate
+# Copy initialization script
+COPY scripts/init-db.sh /usr/local/bin/init-db.sh
+RUN chmod +x /usr/local/bin/init-db.sh
 
 # Change ownership of the app directory to node user
 RUN chown -R node:node /usr/src/app
@@ -33,6 +38,9 @@ USER node
 
 # Expose the application port
 EXPOSE 3000
+
+# Use initialization script as entrypoint
+ENTRYPOINT ["/usr/local/bin/init-db.sh"]
 
 # Command to run the application in development mode (no build needed)
 CMD ["npm", "run", "dev"]

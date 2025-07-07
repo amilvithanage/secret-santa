@@ -8,6 +8,17 @@ import {
 import DatabaseService from "./database";
 import { NotFoundError, BadRequestError, ConflictError } from "../utils/errors";
 
+// Service response type without the success wrapper
+interface ServicePaginatedResponse<T> {
+  data: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export class ParticipantService {
   private db = DatabaseService.getInstance().prisma;
 
@@ -41,7 +52,7 @@ export class ParticipantService {
   async getParticipants(
     page: number = 1,
     limit: number = 10,
-  ): Promise<PaginatedResponse<ParticipantResponse>> {
+  ): Promise<ServicePaginatedResponse<ParticipantResponse>> {
     const skip = (page - 1) * limit;
 
     const [participants, total] = await Promise.all([
@@ -56,7 +67,6 @@ export class ParticipantService {
     const mappedParticipants = participants.map(this.mapToResponse);
 
     return {
-      success: true,
       data: mappedParticipants,
       pagination: {
         page,
@@ -137,7 +147,7 @@ export class ParticipantService {
     query: string,
     page: number = 1,
     limit: number = 10,
-  ): Promise<PaginatedResponse<ParticipantResponse>> {
+  ): Promise<ServicePaginatedResponse<ParticipantResponse>> {
     const skip = (page - 1) * limit;
 
     const [participants, total] = await Promise.all([
@@ -167,7 +177,6 @@ export class ParticipantService {
     );
 
     return {
-      success: true,
       data: mappedParticipants,
       pagination: {
         page,

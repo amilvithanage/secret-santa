@@ -16,6 +16,21 @@ export function useApiState<T>(initialData: T) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Safe setData wrapper that ensures arrays stay arrays
+  const safeSetData = useCallback((newData: T | ((prev: T) => T)) => {
+    if (typeof newData === 'function') {
+      setData((prev) => {
+        // If initial data was an array, ensure prev is always an array
+        if (Array.isArray(initialData) && !Array.isArray(prev)) {
+          return (newData as (prev: T) => T)(initialData);
+        }
+        return (newData as (prev: T) => T)(prev);
+      });
+    } else {
+      setData(newData);
+    }
+  }, []); // Remove initialData dependency to prevent recreation
+
   const execute = useCallback(async (apiCall: () => Promise<any>) => {
     setLoading(true);
     setError(null);
@@ -23,7 +38,7 @@ export function useApiState<T>(initialData: T) {
     try {
       const response = await apiCall();
       if (response.success) {
-        setData(response.data);
+        safeSetData(response.data);
         return response.data;
       } else {
         setError(response.error || "An error occurred");
@@ -37,42 +52,67 @@ export function useApiState<T>(initialData: T) {
     }
   }, []);
 
-  return { data, loading, error, execute, setData, setError };
+  return { data, loading, error, execute, setData: safeSetData, setError };
 }
 
 // Participants hook
 export function useParticipants() {
-  const { data, loading, error, execute, setData } = useApiState<Participant[]>(
+  const { data, loading, error, execute, setData, setError } = useApiState<Participant[]>(
     [],
   );
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadParticipants = useCallback(
     async (page = 1, limit = 50) => {
-      const result = await execute(() =>
-        apiService.getParticipants(page, limit),
-      );
-      return result?.data || [];
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiService.getParticipants(page, limit);
+        if (response.success) {
+          const participantsArray = response.data?.data || [];
+          setData(participantsArray);
+          return participantsArray;
+        } else {
+          setError(response.error || "Failed to load participants");
+          return [];
+        }
+      } catch (err) {
+        setError("Network error occurred");
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [execute],
+    [], // State setters are stable, no dependencies needed
   );
 
   const createParticipant = useCallback(
     async (participantData: CreateParticipantRequest) => {
-      const result = await execute(() =>
-        apiService.createParticipant(participantData),
-      );
-      if (result) {
-        // Add to existing data
-        setData((prev) => [...prev, result]);
+      try {
+        const response = await apiService.createParticipant(participantData);
+        if (response.success && response.data) {
+          // Add to existing data - ensure prev is always an array
+          setData((prev) => {
+            const currentArray = Array.isArray(prev) ? prev : [];
+            return [...currentArray, response.data];
+          });
+          return response.data;
+        } else {
+          setError(response.error || "Failed to create participant");
+          return null;
+        }
+      } catch (err) {
+        setError("Network error occurred");
+        return null;
       }
-      return result;
     },
-    [execute],
+    [], // State setters are stable, no dependencies needed
   );
 
   return {
     participants: data,
-    loading,
+    loading: loading || isLoading,
     error,
     loadParticipants,
     createParticipant,
@@ -81,36 +121,62 @@ export function useParticipants() {
 
 // Gift Exchanges hook
 export function useGiftExchanges() {
-  const { data, loading, error, execute, setData } = useApiState<
+  const { data, loading, error, execute, setData, setError } = useApiState<
     GiftExchange[]
   >([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadGiftExchanges = useCallback(
     async (page = 1, limit = 50) => {
-      const result = await execute(() =>
-        apiService.getGiftExchanges(page, limit),
-      );
-      return result?.data || [];
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const response = await apiService.getGiftExchanges(page, limit);
+        if (response.success) {
+          const exchangesArray = response.data?.data || [];
+          setData(exchangesArray);
+          return exchangesArray;
+        } else {
+          setError(response.error || "Failed to load gift exchanges");
+          return [];
+        }
+      } catch (err) {
+        setError("Network error occurred");
+        return [];
+      } finally {
+        setIsLoading(false);
+      }
     },
-    [execute],
+    [], // State setters are stable, no dependencies needed
   );
 
   const createGiftExchange = useCallback(
     async (exchangeData: CreateGiftExchangeRequest) => {
-      const result = await execute(() =>
-        apiService.createGiftExchange(exchangeData),
-      );
-      if (result) {
-        setData((prev) => [...prev, result]);
+      try {
+        const response = await apiService.createGiftExchange(exchangeData);
+        if (response.success && response.data) {
+          // Add to existing data - ensure prev is always an array
+          setData((prev) => {
+            const currentArray = Array.isArray(prev) ? prev : [];
+            return [...currentArray, response.data];
+          });
+          return response.data;
+        } else {
+          setError(response.error || "Failed to create gift exchange");
+          return null;
+        }
+      } catch (err) {
+        setError("Network error occurred");
+        return null;
       }
-      return result;
     },
-    [execute],
+    [], // State setters are stable, no dependencies needed
   );
 
   return {
     giftExchanges: data,
-    loading,
+    loading: loading || isLoading,
     error,
     loadGiftExchanges,
     createGiftExchange,
@@ -119,19 +185,32 @@ export function useGiftExchanges() {
 
 // Exchange participants hook
 export function useExchangeParticipants(exchangeId: string | null) {
-  const { data, loading, error, execute } = useApiState<Participant[]>([]);
+  const { data, loading, error, execute, setData, setError } = useApiState<Participant[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const loadExchangeParticipants = useCallback(async () => {
     if (!exchangeId) return [];
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      return await execute(() =>
-        apiService.getExchangeParticipants(exchangeId),
-      );
-    } catch (error) {
-      console.error("Error loading exchange participants:", error);
+      const response = await apiService.getExchangeParticipants(exchangeId);
+      if (response.success) {
+        const participantsArray = response.data || [];
+        setData(participantsArray);
+        return participantsArray;
+      } else {
+        setError(response.error || "Failed to load exchange participants");
+        return [];
+      }
+    } catch (err) {
+      setError("Network error occurred");
       return [];
+    } finally {
+      setIsLoading(false);
     }
-  }, [exchangeId, execute]);
+  }, [exchangeId]); // Only exchangeId needed, state setters are stable
 
   const addParticipantToExchange = useCallback(
     async (participantId: string) => {
@@ -141,8 +220,8 @@ export function useExchangeParticipants(exchangeId: string | null) {
           apiService.addParticipantToExchange(exchangeId, { participantId }),
         );
         if (result) {
-          // Reload participants
-          await loadExchangeParticipants();
+          // Reload participants by calling the API directly
+          loadExchangeParticipants().catch(console.error);
         }
         return result;
       } catch (error) {
@@ -150,18 +229,18 @@ export function useExchangeParticipants(exchangeId: string | null) {
         return null;
       }
     },
-    [exchangeId, execute, loadExchangeParticipants],
+    [exchangeId, execute], // Remove loadExchangeParticipants dependency
   );
 
   useEffect(() => {
     if (exchangeId) {
       loadExchangeParticipants().catch(console.error);
     }
-  }, [exchangeId, loadExchangeParticipants]);
+  }, [exchangeId]); // Only depend on exchangeId, not the function
 
   return {
     exchangeParticipants: data,
-    loading,
+    loading: loading || isLoading,
     error,
     loadExchangeParticipants,
     addParticipantToExchange,
@@ -170,22 +249,34 @@ export function useExchangeParticipants(exchangeId: string | null) {
 
 // Exclusion rules hook
 export function useExclusionRules(exchangeId: string | null) {
-  const { data, loading, error, execute, setData } = useApiState<
+  const { data, loading, error, execute, setData, setError } = useApiState<
     ExclusionRule[]
   >([]);
 
   const createExclusionRule = useCallback(
     async (ruleData: CreateExclusionRuleRequest) => {
       if (!exchangeId) return null;
-      const result = await execute(() =>
-        apiService.createExclusionRule(exchangeId, ruleData),
-      );
-      if (result) {
-        setData((prev) => [...prev, result]);
+      try {
+        const response = await apiService.createExclusionRule(exchangeId, ruleData);
+        if (response.success && response.data) {
+          // Add to existing data - ensure prev is always an array
+          setData((prev) => {
+            const currentArray = Array.isArray(prev) ? prev : [];
+            return [...currentArray, response.data];
+          });
+          return response.data;
+        } else {
+          const errorMessage = response.error || "Failed to create exclusion rule";
+          setError(errorMessage);
+          throw new Error(errorMessage);
+        }
+      } catch (err: any) {
+        const errorMessage = err.message || "Network error occurred";
+        setError(errorMessage);
+        throw err;
       }
-      return result;
     },
-    [exchangeId, execute],
+    [exchangeId], // Only exchangeId needed, state setters are stable
   );
 
   const validateExclusionRules = useCallback(async () => {
@@ -232,7 +323,7 @@ export function useAssignments(exchangeId: string | null) {
     if (exchangeId) {
       loadAssignments().catch(console.error);
     }
-  }, [exchangeId, loadAssignments]);
+  }, [exchangeId]); // Only depend on exchangeId, not the function
 
   return {
     assignments: data,
